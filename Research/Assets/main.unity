@@ -122,6 +122,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   color_indicator: {fileID: 1302342519}
+  single_pixel: {fileID: 1855934086462674, guid: 189efcb3eaafdd046995d13b1273850c,
+    type: 2}
 --- !u!23 &830171069
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -181,8 +183,8 @@ Transform:
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 830171067}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 640, y: 360, z: 0}
-  m_LocalScale: {x: 1280, y: 720, z: 1}
+  m_LocalPosition: {x: 64, y: 36, z: 0}
+  m_LocalScale: {x: 128, y: 72, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
