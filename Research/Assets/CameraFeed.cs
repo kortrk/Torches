@@ -14,6 +14,11 @@ public class Pixel{
 }
 
 public class CameraFeed : MonoBehaviour {
+	//constants
+	int WIDTH = 1280;
+	int HEIGHT = 720;
+
+	//public variables
 	public GameObject color_indicator;
 
 	//each paddle is a set of pixels
@@ -38,8 +43,8 @@ public class CameraFeed : MonoBehaviour {
 			GetComponent<MeshRenderer> ().material.mainTexture = webcam;
 		else if (GetComponent<SpriteRenderer> () != null)
 			GetComponent<SpriteRenderer> ().material.mainTexture = webcam;
-		webcam.requestedWidth = 1280;
-		webcam.requestedHeight = 720;
+		webcam.requestedWidth = WIDTH;
+		webcam.requestedHeight = HEIGHT;
 		webcam.Play ();
 	}
 	
@@ -63,7 +68,7 @@ public class CameraFeed : MonoBehaviour {
 
 	void mouseColorTest(){
 		Vector2 mp = mouseInWorld (); 
-		Color hue = webcam.GetPixels() [(int)(mp.x + 1280*mp.y)];
+		Color hue = webcam.GetPixels() [(int)(mp.x + WIDTH*mp.y)];
 		print ("Mouse: "+mp.x+","+mp.y);
 		color_indicator.SetActive (true);
 		color_indicator.GetComponent<SpriteRenderer> ().color = hue;
@@ -85,16 +90,79 @@ public class CameraFeed : MonoBehaviour {
 		//		sat > 55
 		//		val > 33
 		Color[] pixels = webcam.GetPixels();
+		HashSet<int> already_in_paddles;
 		float h = 0;
 		float s = 0;
 		float v = 0;
 		for (int i = 0; i < pixels.Length; i++) {
+			if (already_in_paddles.Contains (i)) continue;
 			Color.RGBToHSV (pixels [i], out h, out s, out v);
-			if (160 < h*360 && h*360 < 170 && s*100 > 50 && v*100 > 33) {
-				//^ the range of valid greens 
-				g_paddles_found++;
+			if (isGreen(h,s,v)) {
+				HashSet<Pixel> paddle = BFS (i, pixels, already_in_paddles, "green");
+				//we may actually want a paddle object: {pxl_set, center}
+				green_paddles.Add (paddle);
 			}
 		}
+	}
+
+	HashSet<int> BFS (int i, Color[] pixels, HashSet<Pixel> already_in_pixels, string color){
+		//add this to a paddle hashset
+		HashSet<int> paddle = new HashSet<int>();
+		HashSet<int> visited = new HashSet<int>();	//all the pixels we've seen, including non-red/non-green
+		Queue<int> q = new Queue<int>();
+		visited.Add (i);
+		q.Enqueue (i);
+
+		while (q.Count != 0) {
+			int x = q.Dequeue ();
+			//there are potentially eight neighbors for this pixel
+			List<int> neighbors = getPixelNeighbors(i, pixels.Length);
+			//check each neighbor - if it's the right color, it goes in q
+			Vector3 i_color = hsvAt(i, pixels); //pun
+			if (color=="green" && isGreen(i_color.x,i_color.y,i_color.z) /*|| (color=="red"&& isRed())*/){
+
+			}
+		}
+
+	}
+
+	Vector3 hsvAt(int i, Color[] pixels){
+		//TODO: get the hsv of an index in pixels
+		return new Vector3 ();
+	}
+
+	List<int> getPixelNeighbors(int i, int length){
+		List<int> result = new List<int> ();
+		if (i + 1 < length) //right
+			result.Add (i + 1);
+		if (i - 1 > 0) //left
+			result.Add (i - 1);
+		if (i - WIDTH > 0)//above
+			result.Add(i - WIDTH);
+		if (i + WIDTH < length)//below
+			result.Add(i + WIDTH);
+		if (i - WIDTH + 1 > 0)//diag r above
+			result.Add(i - WIDTH + 1);
+		if (i - WIDTH - 1 > 0)//diag l above
+			result.Add(i - WIDTH - 1);
+		if (i + WIDTH + 1 < length)//diag r below
+			result.Add(i + WIDTH + 1);
+		if (i + WIDTH - 1 < length)//diag l below
+			result.Add(i - WIDTH + 1);
+		return result;
+	}
+
+	bool isGreen(float h, float s, float v){
+		//the range of valid green pixels:
+		return 160 < h * 360 && h * 360 < 170 && s * 100 > 50 && v * 100 > 33;
+	}
+
+	Pixel xyPixel(int i, int pixels_len){
+		//makes a pixel given its 
+		//index in pixels array
+		int y_val = i / HEIGHT;
+		int x_val = pixels_len - y_val;
+		return new Pixel (x_val, y_val);
 	}
 
 	/*
