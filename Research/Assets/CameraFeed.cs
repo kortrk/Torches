@@ -2,21 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Pixel{
-	Color color;
-	public int x;
-	public int y;
-
-	public Pixel(int x_, int y_){
-		x = x_;
-		y = y_;
-	}
-
-	public string toString(){
-		return x + ", " + y;
-	}
-}
-
 public class Blob{
 	public HashSet<int> pixels;
 	Vector2 center;
@@ -67,29 +52,14 @@ public class CameraFeed : MonoBehaviour {
 	public GameObject color_indicator;
 	public GameObject single_pixel;
 
-	//BFS each paddle is a set of pixels
-	List<HashSet<int>> green_paddles;
-	List<HashSet<int>> red_paddles;
-	HashSet<int> already_seen_green;
-	HashSet<int> already_seen_red;
-	int pixels_BFSed = 0;
-
 	//Blob
 	List<Blob> green_blobs;
 
 	WebCamTexture webcam;
 
-	//TEST 
-	bool freeze = false;
-
 	// Use this for initialization
 	void Start () {
 		//set up the paddle lists
-		green_paddles = new List<HashSet<int>> ();
-		red_paddles = new List<HashSet<int>> ();
-		already_seen_green = new HashSet<int> ();
-		already_seen_red = new HashSet<int> ();
-
 		green_blobs = new List<Blob> ();
 
 		foreach (WebCamDevice w in WebCamTexture.devices) {
@@ -111,18 +81,10 @@ public class CameraFeed : MonoBehaviour {
 	void Update () {
 		getPaddleBlobs ();
 
-
 		//TEST
+		drawCentersToScreen ();
 		if (Input.GetKeyDown (KeyCode.B)) {
-			print (green_blobs.Count);
-			if (green_blobs.Count < 50) {
-				for (int b = 0; b < green_blobs.Count; b++) {
-					string p = green_blobs [b].toString();
-					print (p);
-				}
-			}
 			drawBlobsToScreen ();
-			//freeze = true;
 		}
 		//mouseColorTest();
 	}
@@ -169,6 +131,14 @@ public class CameraFeed : MonoBehaviour {
 					green_blobs.Add (new Blob ((int)p.x, (int)p.y, i));
 			}
 		}
+		//remove any blob that isn't big enough to 
+		//be a real paddle
+		List<Blob> keepers = new List<Blob> ();
+		foreach (Blob x in green_blobs) {
+			if (x.pixels.Count > 200)
+				keepers.Add (x);
+		}
+		green_blobs = keepers;
 	}
 
 	bool isGreen(float r, float g, float b){
@@ -200,6 +170,24 @@ public class CameraFeed : MonoBehaviour {
 		}
 	}
 
+	void drawCentersToScreen(){
+		GameObject container;
+		container = GameObject.Find ("Centers");
+		if (container) {
+			Destroy (container);
+		}
+		container = new GameObject ();
+		container.name = "Centers";
+		for (int x = 0; x < green_blobs.Count; x++) {
+			Color c = new Color (Random.Range (0f, 1f), Random.Range (0f, 1f), Random.Range (0f, 1f));
+			Vector2 p = green_blobs [x].getCenter ();
+			GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/10f, p.y/10f, 0), Quaternion.identity);
+			pixel.transform.localScale = new Vector3 (100, 100, 1);
+			pixel.GetComponent<SpriteRenderer> ().color = c;
+			pixel.transform.parent = container.transform;
+		}
+	}
+
 	/*
 	 * 1/21 Notes:
 	 * Brighten projection?
@@ -208,4 +196,16 @@ public class CameraFeed : MonoBehaviour {
 	 * Walking in would be good with Option 7 (Cloud)
 	 * 	from the lighting panel
 	 */
+
+	/*
+		2/25 Notes:
+		Paddle detection is better on lower part of
+		camera feed than top. 
+		Need a better definition for
+		green.
+		Also, the paddle blob threshold must be adjusted.
+		When the blob threshold is smaller, we can bring
+		down the smallest possible valid blob without 
+		worrying that false positives will be getting in.
+	*/
 }
