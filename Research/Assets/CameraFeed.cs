@@ -113,10 +113,6 @@ public class CameraFeed : MonoBehaviour {
 
 
 		//TEST
-		if (Input.GetKeyDown (KeyCode.P)) {
-			print (green_paddles.Count);
-			drawPaddlesToScreen ();
-		}
 		if (Input.GetKeyDown (KeyCode.B)) {
 			print (green_blobs.Count);
 			if (green_blobs.Count < 50) {
@@ -152,31 +148,6 @@ public class CameraFeed : MonoBehaviour {
 		}
 	}
 	
-	void getPaddles(){
-		pixels_BFSed = 0;
-		//clear out the paddles already in there
-		green_paddles.Clear();
-		red_paddles.Clear ();
-		already_seen_green.Clear ();
-		already_seen_red.Clear ();
-		Color32[] pixels = webcam.GetPixels32();
-		for (int i = 0; i < pixels.Length; i++) {
-			if (already_seen_green.Contains (i))
-				continue;
-			if (isGreen(pixels[i].r, pixels[i].g, pixels[i].b)) {
-				if (already_seen_green.Contains (i)) continue;
-				HashSet<int> paddle = BFS (i, pixels, "green");
-				//we may actually want a paddle object: {pxl_set, center}
-				if (paddle.Count > 500) { 
-					green_paddles.Add (paddle);
-					//already_seen_green.UnionWith (paddle);
-				}
-			}
-		}
-		if (Input.GetKeyDown(KeyCode.O))
-			print(pixels_BFSed);
-	}
-
 	void getPaddleBlobs(){
 		//first we need to clear out green blobs at the start of the frame
 		green_blobs.Clear ();
@@ -200,106 +171,14 @@ public class CameraFeed : MonoBehaviour {
 		}
 	}
 
-	HashSet<int> BFS (int i, Color32[] pixels, string color){
-		//add this to a paddle hashset
-		HashSet<int> paddle = new HashSet<int>();
-		HashSet<int> visited = new HashSet<int>();	//all the pixels we've seen, including non-red/non-green
-		Queue<int> q = new Queue<int>();
-		visited.Add (i);
-		q.Enqueue (i);
-
-		while (q.Count != 0) {
-			int x = q.Dequeue ();
-			paddle.Add (x);
-			pixels_BFSed++;
-			//there are potentially eight neighbors for this pixel
-			List<int> neighbors = getPixelNeighbors(x, pixels.Length);
-			//check each neighbor - if it's the right color, it goes in q
-			for (int y = 0; y < neighbors.Count; y++) {
-				if (color == "green") already_seen_green.Add (y);
-				else if (color == "red") already_seen_red.Add (y);
-				if (!visited.Contains (neighbors[y])) 
-					visited.Add (neighbors[y]);
-				else 
-					continue;
-				if (color == "green" && isGreen (pixels[neighbors[y]].r, pixels[neighbors[y]].g, pixels[neighbors[y]].b) /*|| (color=="red"&& isRed())*/) {
-					q.Enqueue (neighbors[y]);
-				}
-			}
-		}
-			
-		return paddle;
-
-	}
-
-	Vector3 hsvAt(int i, Color[] pixels){
-		//get the hsv of an index in pixels
-		float h,s,v;
-		Color.RGBToHSV (pixels [i], out h, out s, out v);
-		return new Vector3 (h, s, v);
-	}
-
-	List<int> getPixelNeighbors(int i, int length){
-		List<int> result = new List<int> ();
-		if (i + 1 < length) //right
-			result.Add (i + 1);
-		if (i - 1 >= 0) //left
-			result.Add (i - 1);
-		if (i - WIDTH >= 0)//above
-			result.Add(i - WIDTH);
-		if (i + WIDTH < length)//below
-			result.Add(i + WIDTH);
-		if (i - WIDTH + 1 >= 0)//diag r above
-			result.Add(i - WIDTH + 1);
-		if (i - WIDTH - 1 >= 0)//diag l above
-			result.Add(i - WIDTH - 1);
-		if (i + WIDTH + 1 < length)//diag r below
-			result.Add(i + WIDTH + 1);
-		if (i + WIDTH - 1 < length)//diag l below
-			result.Add(i + WIDTH - 1);
-		return result;
-	}
-
-	bool isGreenOLD(float h, float s, float v){
-		//the range of valid green pixels:
-		return 150 < h * 360 && h * 360 < 180 && s * 100 > 50 /*&& v * 100 > 33*/;
-	}
-
 	bool isGreen(float r, float g, float b){
 		return g > (r + b);
-	}
-
-	Pixel get_Pixel_xyOLD(int i, int pixels_len){
-		//makes a pixel given its 
-		//index in pixels array
-		int y_val = i / WIDTH;
-		int x_val = i - WIDTH*y_val;
-		return new Pixel (x_val, y_val);
 	}
 
 	Vector2 get_Pixel_xy(int i, int pixels_len){
 		int y_val = i / WIDTH;
 		int x_val = i - WIDTH*y_val;
 		return new Vector2 (x_val, y_val);
-	}
-
-	void drawPaddlesToScreen(){
-		GameObject container;
-		container = GameObject.Find ("Pixels");
-		if (container) {
-			Destroy (container);
-		}
-		container = new GameObject ();
-		container.name = "Pixels";
-		for (int x = 0; x < green_paddles.Count; x++) {
-			Color c = new Color (Random.Range (0f, 1f), Random.Range (0f, 1f), Random.Range (0f, 1f));
-			foreach (int i  in green_paddles[x]) {
-				Vector2 p = get_Pixel_xy (i, WIDTH * HEIGHT);
-				GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/10f, p.y/10f, 0), Quaternion.identity);
-				pixel.GetComponent<SpriteRenderer> ().color = c;
-				pixel.transform.parent = container.transform;
-			}
-		}
 	}
 
 	void drawBlobsToScreen(){
