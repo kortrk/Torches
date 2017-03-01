@@ -1,0 +1,22 @@
+RGB Values From Screenshots
+RED
+166 10 8 (back angled back red)
+178 10 5 (back angled flat red)
+ 92  2 0 (back angled forward red)
+162 12 8 (front angled back red)
+ 78  5 7 (front angled flat red)
+ 85  9 9 (front angled forward red)
+219 18 13(middle angled flat red)
+
+GREEN
+62  75  30 (back angled back green)
+39  37  13 (back angled down green)
+68  77  35 (back angled flat green)
+42  36  17 (back angled forward green)
+37  31  15 (front angled forward green)
+126 129 53 (middle angled back green)
+46  43  19 (middle angled flat green)
+
+width of a paddle in front row: 78.1
+width of a paddle in back row: 14 
+

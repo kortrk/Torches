@@ -42,11 +42,23 @@ public class Blob{
 	}
 }
 
+
+public class HeightInfo{
+	public float threshold;
+	public float min_pixels;
+}
+
 public class CameraFeed : MonoBehaviour {
 	//constants
 	int WIDTH = 1280;
 	int HEIGHT = 720;
-	int THRESHOLD = 400;
+	int THRESHOLD = 14; 
+	float SCREEN_SCALEDOWN = 1f;//Unity struggles with such large coordinates
+	int TOP_PADDLE_Y = 620; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 170; //        "       bottom paddle
+	int TOP_PADDLE_W = 14; //we use height to predict diminishing
+	int BOTTOM_PADDLE_W = 78;//paddle size with row in lecture hall
+
 
 	//public variables
 	public GameObject color_indicator;
@@ -57,11 +69,23 @@ public class CameraFeed : MonoBehaviour {
 
 	WebCamTexture webcam;
 
+	HeightInfo[] expected_dimensions;
+
+	//TEST
+	List<Vector3> dist_points;
+
 	// Use this for initialization
 	void Start () {
+		print ("Reminder: TOP_PADDLE_Y and BOTTOM_\" need to be set");
+		//scale screen
+		transform.localScale = new Vector2 (transform.localScale.x/SCREEN_SCALEDOWN, 
+			transform.localScale.y/SCREEN_SCALEDOWN);
+		transform.position = new Vector2 (transform.localScale.x / 2, transform.localScale.y / 2);
+
 		//set up the paddle lists
 		green_blobs = new List<Blob> ();
 
+		//set up camera feed - error if webcam not present
 		foreach (WebCamDevice w in WebCamTexture.devices) {
 			print (w.name);
 		}
@@ -75,6 +99,12 @@ public class CameraFeed : MonoBehaviour {
 		webcam.requestedFPS = 60;
 		webcam.Play ();
 
+		//paddle pixel counts and thresholds narrowed by distance
+		expected_dimensions = ExpectedDimensions();
+
+		//TEST
+		dist_points = new List<Vector3>();
+
 	}
 	
 	// Update is called once per frame
@@ -87,6 +117,7 @@ public class CameraFeed : MonoBehaviour {
 			drawBlobsToScreen ();
 		}
 		//mouseColorTest();
+		//drawDistance();
 	}
 		
 	Vector2 mouseInWorld(){
@@ -121,7 +152,8 @@ public class CameraFeed : MonoBehaviour {
 				Vector2 p = get_Pixel_xy(i, WIDTH*HEIGHT);
 				bool found = false;
 				for (int j = 0; j < green_blobs.Count; j++) {
-					if (Vector2.Distance(p, green_blobs[j].getCenter())<THRESHOLD){
+					if (Vector2.Distance(p, green_blobs[j].getCenter())
+						< expected_dimensions[(int)p.y].threshold){
 						found = true;
 						green_blobs[j].add((int)p.x, (int)p.y, i);
 						break;
@@ -135,14 +167,14 @@ public class CameraFeed : MonoBehaviour {
 		//be a real paddle
 		List<Blob> keepers = new List<Blob> ();
 		foreach (Blob x in green_blobs) {
-			if (x.pixels.Count > 200)
+			if (x.pixels.Count > expected_dimensions[(int)x.getCenter().y].min_pixels)
 				keepers.Add (x);
 		}
 		green_blobs = keepers;
 	}
 
 	bool isGreen(float r, float g, float b){
-		return g > (r + b);
+		return g >  (r + b)/*.5f*/;
 	}
 
 	Vector2 get_Pixel_xy(int i, int pixels_len){
@@ -163,7 +195,7 @@ public class CameraFeed : MonoBehaviour {
 			Color c = new Color (Random.Range (0f, 1f), Random.Range (0f, 1f), Random.Range (0f, 1f));
 			foreach (int i  in green_blobs[x].pixels) {
 				Vector2 p = get_Pixel_xy (i, WIDTH * HEIGHT);
-				GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/10f, p.y/10f, 0), Quaternion.identity);
+				GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/SCREEN_SCALEDOWN , p.y/SCREEN_SCALEDOWN, 0), Quaternion.identity);
 				pixel.GetComponent<SpriteRenderer> ().color = c;
 				pixel.transform.parent = container.transform;
 			}
@@ -188,6 +220,54 @@ public class CameraFeed : MonoBehaviour {
 		}
 	}
 
+	void drawDistance(){
+		if (Input.GetMouseButtonDown (0)) {
+			if (dist_points.Count != 1) {
+				//first click
+				dist_points.Clear ();
+				Vector2 m_pos = mouseInWorld ();
+				dist_points.Add (new Vector3 (m_pos.x, m_pos.y, 0));
+			} else {
+				//second click
+				Vector2 m_pos = mouseInWorld ();
+				dist_points.Add (new Vector3 (m_pos.x, m_pos.y, 0));
+				GetComponent<LineRenderer> ().SetPositions (dist_points.ToArray ());
+				print (Vector3.Distance (dist_points [0], dist_points [1]));
+			}
+		}
+	}
+
+	HeightInfo[] ExpectedDimensions(){
+		//the expected paddle width (in pixels) reduces as a
+		//paddle gets higher in the lecture hall. Here we make
+		//an array of expected widths for reference when 
+		//calculating THRESHOLD and min_pixels
+		HeightInfo[] result  = new HeightInfo[721];
+		for (int i = BOTTOM_PADDLE_Y; i <= TOP_PADDLE_Y; i++) {
+			result [i] = new HeightInfo ();
+			float width_here = Mathf.Lerp (BOTTOM_PADDLE_W, TOP_PADDLE_W, 
+				  (i - BOTTOM_PADDLE_Y) / (TOP_PADDLE_Y - BOTTOM_PADDLE_Y));
+			result [i].threshold = width_here * .55f; //a little bigger for leeway
+			result [i].min_pixels = (width_here * width_here) * .8f;
+			//we use 80% of the pixels we're expecting in a paddle
+			//as our threshold so we know that we're giving some leeway
+			//if the paddle is being tilted around
+		}
+		//now we'll fill the heights above and below the paddles we
+		//took measurements for with the same values from those paddles
+		for (int j = 0; j < BOTTOM_PADDLE_Y; j++) {
+			result [j] = new HeightInfo ();
+			result [j].threshold = result [BOTTOM_PADDLE_Y].threshold;
+			result [j].min_pixels = result [BOTTOM_PADDLE_Y].min_pixels;
+		}
+		for (int k = TOP_PADDLE_Y; k <= 720; k++) {
+			result [k] = new HeightInfo ();
+			result [k].threshold = result [TOP_PADDLE_Y].threshold;
+			result [k].min_pixels = result [TOP_PADDLE_Y].min_pixels;
+		}
+		return result;
+	}
+
 	/*
 	 * 1/21 Notes:
 	 * Brighten projection?
@@ -207,5 +287,22 @@ public class CameraFeed : MonoBehaviour {
 		When the blob threshold is smaller, we can bring
 		down the smallest possible valid blob without 
 		worrying that false positives will be getting in.
+	*/
+
+	/*
+		Professor Lawson Meeting 2/27
+		Try green larger than average of blue and red
+		Try green larger than each of the other two
+		After thoughts: THRESHOLD should be paddle's 
+		width and paddles should be 2 paddle widths 
+		apart? Next DCC trip, we'll get the right isGreen
+		definition and then measure paddle widths at 
+		back and front of room.
+	*/
+
+	/*
+		2/28 Distance and Color Testing in the DCC
+		Front and Center of the Room Paddle Size - 78.1
+		Back and Center Paddle Width - 14
 	*/
 }
