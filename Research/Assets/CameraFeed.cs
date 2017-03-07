@@ -37,6 +37,10 @@ public class Blob{
 		return center;
 	}
 
+	public float getWidth(){
+		return max_x - min_x;
+	}
+
 	public string toString(){
 		return "(" + center.x + "," + center.y + ") " + " pixels size: " + pixels.Count;
 	}
@@ -54,10 +58,10 @@ public class CameraFeed : MonoBehaviour {
 	int HEIGHT = 720;
 	int THRESHOLD = 14; 
 	float SCREEN_SCALEDOWN = 1f;//Unity struggles with such large coordinates
-	int TOP_PADDLE_Y = 620; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 170; //        "       bottom paddle
-	int TOP_PADDLE_W = 14; //we use height to predict diminishing
-	int BOTTOM_PADDLE_W = 78;//paddle size with row in lecture hall
+	int TOP_PADDLE_Y = 467; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 194; //        "       bottom paddle
+	int TOP_PADDLE_W = 19;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_W = 67; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -73,6 +77,7 @@ public class CameraFeed : MonoBehaviour {
 
 	//TEST
 	List<Vector3> dist_points;
+	int num_green_found = 0;
 
 	// Use this for initialization
 	void Start () {
@@ -104,6 +109,7 @@ public class CameraFeed : MonoBehaviour {
 
 		//TEST
 		dist_points = new List<Vector3>();
+		//print(isGreen (94 / 255f, 12 / 255f, 88 / 255f));
 
 	}
 	
@@ -112,12 +118,14 @@ public class CameraFeed : MonoBehaviour {
 		getPaddleBlobs ();
 
 		//TEST
-		drawCentersToScreen ();
-		if (Input.GetKeyDown (KeyCode.B)) {
-			drawBlobsToScreen ();
+		//drawCentersToScreen ();
+		if (Input.GetKeyDown (KeyCode.B) || Input.GetMouseButton(2)) {
+			//drawBlobsToScreen ();
+			print ("Number of green blobs: "+green_blobs.Count);
+			print ("Number of green pixels found: " + num_green_found);
 		}
-		//mouseColorTest();
-		//drawDistance();
+		mouseColorTest();
+		drawDistance();
 	}
 		
 	Vector2 mouseInWorld(){
@@ -130,24 +138,26 @@ public class CameraFeed : MonoBehaviour {
 	void mouseColorTest(){
 		Vector2 mp = mouseInWorld (); 
 		Color hue = webcam.GetPixels() [(int)(mp.x + WIDTH*mp.y)];
-		print ("Mouse: "+mp.x+","+mp.y);
+		//print ("Mouse: "+mp.x+","+mp.y);
 		color_indicator.SetActive (true);
 		color_indicator.GetComponent<SpriteRenderer> ().color = hue;
 
 		if (Input.GetMouseButtonDown (0)) {
 			float h, s, v;
 			Color.RGBToHSV (hue, out h, out s, out v);
-			print (hue+" "+h*360+","+s*100+","+v*100);
+			print (hue+" "+(h*360).ToString("N")+","+(s*100).ToString("N")+","+(v*100).ToString("N")+" expected width at y="+mp.y+": "+expected_dimensions[(int)mp.y].threshold*2);
 		}
 	}
 	
 	void getPaddleBlobs(){
 		//first we need to clear out green blobs at the start of the frame
 		green_blobs.Clear ();
+		num_green_found = 0;
 		//now we get the pixel array
 		Color32[] pixels = webcam.GetPixels32();
-		for (int i = 0; i < pixels.Length; i++) {
+		for (int i = 0; i < pixels.Length; i+=2) {
 			if (isGreen (pixels [i].r, pixels [i].g, pixels [i].b)) {
+				num_green_found++;
 				//is there a blob nearby that this belongs to?
 				Vector2 p = get_Pixel_xy(i, WIDTH*HEIGHT);
 				bool found = false;
@@ -174,7 +184,16 @@ public class CameraFeed : MonoBehaviour {
 	}
 
 	bool isGreen(float r, float g, float b){
-		return g >  (r + b)/*.5f*/;
+		//using the builtin is faster than doing this by hand, somehow
+		float h, s, v;
+		Color.RGBToHSV (new Color (r, g, b), out h, out s, out v);
+		h *= 360;
+		//print("RGB Given: "+r+","+g+","+b+" HSV Output:"+h+","+s+","+v);
+		return 90f < h && h < 150f && s > 20/255f && v > 30/255f;
+	}
+
+	bool isGreenRGB(float r, float g, float b){
+		return g >  (r + b)*.5f && r < (g * 1.1f) && b < g;
 	}
 
 	Vector2 get_Pixel_xy(int i, int pixels_len){
@@ -232,7 +251,7 @@ public class CameraFeed : MonoBehaviour {
 				Vector2 m_pos = mouseInWorld ();
 				dist_points.Add (new Vector3 (m_pos.x, m_pos.y, 0));
 				GetComponent<LineRenderer> ().SetPositions (dist_points.ToArray ());
-				print (Vector3.Distance (dist_points [0], dist_points [1]));
+				print ("at y (first click) = "+dist_points[0].y+", distance: "+Vector3.Distance (dist_points [0], dist_points [1]));
 			}
 		}
 	}
@@ -240,30 +259,27 @@ public class CameraFeed : MonoBehaviour {
 	HeightInfo[] ExpectedDimensions(){
 		//the expected paddle width (in pixels) reduces as a
 		//paddle gets higher in the lecture hall. Here we make
-		//an array of expected widths for reference when 
-		//calculating THRESHOLD and min_pixels
+		//an array of expected THRESHOLDs and min_pixels
+
+		//first, we'll make up a line equation from one known 
+		//y location and width to the other
+
+		//width = mx + b
+		float m = ((float)TOP_PADDLE_W - BOTTOM_PADDLE_W) / ((float)TOP_PADDLE_Y - BOTTOM_PADDLE_Y);
+		float b = TOP_PADDLE_W - m * TOP_PADDLE_Y;
+
+		//Now we use the line equation to calculate min_pixels and thresholds
 		HeightInfo[] result  = new HeightInfo[721];
-		for (int i = BOTTOM_PADDLE_Y; i <= TOP_PADDLE_Y; i++) {
+		for (int i = 0; i <= 720; i++) { //each i is an input y location
 			result [i] = new HeightInfo ();
-			float width_here = Mathf.Lerp (BOTTOM_PADDLE_W, TOP_PADDLE_W, 
-				  (i - BOTTOM_PADDLE_Y) / (TOP_PADDLE_Y - BOTTOM_PADDLE_Y));
+			float width_here = m * i + b;
 			result [i].threshold = width_here * .55f; //a little bigger for leeway
-			result [i].min_pixels = (width_here * width_here) * .8f;
+			result [i].min_pixels = width_here;// * width_here * .8f; 
 			//we use 80% of the pixels we're expecting in a paddle
 			//as our threshold so we know that we're giving some leeway
 			//if the paddle is being tilted around
-		}
-		//now we'll fill the heights above and below the paddles we
-		//took measurements for with the same values from those paddles
-		for (int j = 0; j < BOTTOM_PADDLE_Y; j++) {
-			result [j] = new HeightInfo ();
-			result [j].threshold = result [BOTTOM_PADDLE_Y].threshold;
-			result [j].min_pixels = result [BOTTOM_PADDLE_Y].min_pixels;
-		}
-		for (int k = TOP_PADDLE_Y; k <= 720; k++) {
-			result [k] = new HeightInfo ();
-			result [k].threshold = result [TOP_PADDLE_Y].threshold;
-			result [k].min_pixels = result [TOP_PADDLE_Y].min_pixels;
+
+			//print("expected width at y="+i+": "+width_here);
 		}
 		return result;
 	}
