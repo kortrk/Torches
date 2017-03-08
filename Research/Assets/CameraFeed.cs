@@ -9,6 +9,7 @@ public class Blob{
 	int min_y;
 	int max_x;
 	int max_y;
+	public int id;
 
 	public Blob(int x_, int y_, int i){
 		min_x = x_;
@@ -18,6 +19,7 @@ public class Blob{
 		center = new Vector2 ((float)x_, (float)y_);
 		pixels = new HashSet<int> ();
 		pixels.Add (i);
+		id = -1;
 	}
 
 	public void add(int x_, int y_, int i){
@@ -58,10 +60,10 @@ public class CameraFeed : MonoBehaviour {
 	int HEIGHT = 720;
 	int THRESHOLD = 14; 
 	float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
-	int TOP_PADDLE_Y = 531; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 256; //        "       bottom paddle
-	int TOP_PADDLE_H = 25;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_H = 72; //paddle size with row in lecture hall
+	int TOP_PADDLE_Y = 548; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 360; //        "       bottom paddle
+	int TOP_PADDLE_H = 28;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_H = 86; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -70,10 +72,11 @@ public class CameraFeed : MonoBehaviour {
 
 	//Blob
 	List<Blob> green_blobs;
-
 	WebCamTexture webcam;
-
 	HeightInfo[] expected_dimensions;
+
+	//Blob Persistance
+	Dictionary<Vector2, int> locations_and_ids;
 
 	//TEST
 	List<Vector3> dist_points;
@@ -107,6 +110,8 @@ public class CameraFeed : MonoBehaviour {
 		//paddle pixel counts and thresholds narrowed by distance
 		expected_dimensions = ExpectedDimensions();
 
+		locations_and_ids = new Dictionary<Vector2, int> ();
+
 		//TEST
 		dist_points = new List<Vector3>();
 		//print(isGreen (94 / 255f, 12 / 255f, 88 / 255f));
@@ -126,6 +131,17 @@ public class CameraFeed : MonoBehaviour {
 		}
 		//mouseColorTest();
 		//drawDistance();
+
+		if (Input.GetKeyDown (KeyCode.Q) || Input.GetMouseButtonDown(1)) {
+			assignIDs ();
+			print ("IDs assigned for " + locations_and_ids.Count+" paddle centers");
+		}
+
+		if (Input.GetMouseButtonDown (0)) {
+			foreach (Blob b in green_blobs) {
+				print (b.id);
+			}
+		}
 	}
 		
 	Vector2 mouseInWorld(){
@@ -177,8 +193,24 @@ public class CameraFeed : MonoBehaviour {
 		//be a real paddle
 		List<Blob> keepers = new List<Blob> ();
 		foreach (Blob x in green_blobs) {
-			if (x.pixels.Count > expected_dimensions[(int)x.getCenter().y].min_pixels)
+			if (x.pixels.Count > expected_dimensions [(int)x.getCenter ().y].min_pixels) {
+				//check to see if this is an existing paddle
+				Vector2 x_c = x.getCenter();
+				foreach (Vector2 v2 in locations_and_ids.Keys) {
+					if (Vector2.Distance (x_c, v2) < expected_dimensions [(int)x_c.y].threshold) {
+						//this must be the same paddle
+						x.id = locations_and_ids[v2];
+						break;
+					}
+				}
+				if (x.id == -1) {
+					//we could use this check to eliminate paddles that
+					//weren't in the original id assignment
+					x.id = locations_and_ids.Count;
+				}
+				
 				keepers.Add (x);
+			}
 		}
 		green_blobs = keepers;
 	}
@@ -230,7 +262,9 @@ public class CameraFeed : MonoBehaviour {
 		container = new GameObject ();
 		container.name = "Centers";
 		for (int x = 0; x < green_blobs.Count; x++) {
-			Color c = new Color (Random.Range (0f, 1f), Random.Range (0f, 1f), Random.Range (0f, 1f));
+			if (Input.GetMouseButtonDown (1))
+				print ("Making color for id " + green_blobs [x].id + " with hue " + green_blobs [x].id % 48 * 7.5f);
+			Color c = Color.HSVToRGB((green_blobs[x].id%48 * 50f)/360f, 1f, 1f);
 			Vector2 p = green_blobs [x].getCenter ();
 			GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/SCREEN_SCALEDOWN, p.y/SCREEN_SCALEDOWN, 0), Quaternion.identity);
 			pixel.transform.localScale = new Vector3 (100, 100, 1);
@@ -245,11 +279,11 @@ public class CameraFeed : MonoBehaviour {
 				//first click
 				dist_points.Clear ();
 				Vector2 m_pos = mouseInWorld ();
-				dist_points.Add (new Vector3 (m_pos.x, m_pos.y, 0));
+				dist_points.Add (new Vector3 (m_pos.x*SCREEN_SCALEDOWN, m_pos.y*SCREEN_SCALEDOWN, 0));
 			} else {
 				//second click
 				Vector2 m_pos = mouseInWorld ();
-				dist_points.Add (new Vector3 (m_pos.x, m_pos.y, 0));
+				dist_points.Add (new Vector3 (m_pos.x*SCREEN_SCALEDOWN, m_pos.y*SCREEN_SCALEDOWN, 0));
 				GetComponent<LineRenderer> ().SetPositions (dist_points.ToArray ());
 				print ("at y (first click) = "+dist_points[0].y+", distance: "+Vector3.Distance (dist_points [0], dist_points [1]));
 			}
@@ -284,6 +318,16 @@ public class CameraFeed : MonoBehaviour {
 		return result;
 	}
 
+	void assignIDs(){
+		locations_and_ids.Clear ();
+		int id = 0;
+		foreach (Blob b in green_blobs) {
+			locations_and_ids.Add (b.getCenter (), id);
+			print (id + ": " + b.getCenter());
+			id++;
+		}
+	}
+
 	/*
 	 * 1/21 Notes:
 	 * Brighten projection?
@@ -310,6 +354,10 @@ public class CameraFeed : MonoBehaviour {
 	wrong. We only rewrite that stash of ids and 
 	centers if we are at the "calibration" scene again.
 
+	*/
+
+	/*
+		3/8 Use lights setting 4 in DCC 318.
 	*/
 
 }
