@@ -60,8 +60,8 @@ public class CameraFeed : MonoBehaviour {
 	float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
 	int TOP_PADDLE_Y = 531; //where on screen is the top paddle
 	int BOTTOM_PADDLE_Y = 256; //        "       bottom paddle
-	int TOP_PADDLE_W = 25;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_W = 72; //paddle size with row in lecture hall
+	int TOP_PADDLE_H = 25;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_H = 72; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -118,7 +118,7 @@ public class CameraFeed : MonoBehaviour {
 		getPaddleBlobs ();
 
 		//TEST
-		//drawCentersToScreen ();
+		drawCentersToScreen ();
 		if (Input.GetKeyDown (KeyCode.B) || Input.GetMouseButton(2)) {
 			drawBlobsToScreen ();
 			print ("Number of green blobs: "+green_blobs.Count);
@@ -265,8 +265,8 @@ public class CameraFeed : MonoBehaviour {
 		//y location and width to the other
 
 		//width = mx + b
-		float m = ((float)TOP_PADDLE_W - BOTTOM_PADDLE_W) / ((float)TOP_PADDLE_Y - BOTTOM_PADDLE_Y);
-		float b = TOP_PADDLE_W - m * TOP_PADDLE_Y;
+		float m = ((float)TOP_PADDLE_H - BOTTOM_PADDLE_H) / ((float)TOP_PADDLE_Y - BOTTOM_PADDLE_Y);
+		float b = TOP_PADDLE_H - m * TOP_PADDLE_Y;
 
 		//Now we use the line equation to calculate min_pixels and thresholds
 		HeightInfo[] result  = new HeightInfo[721];
@@ -294,31 +294,22 @@ public class CameraFeed : MonoBehaviour {
 	 */
 
 	/*
-		2/25 Notes:
-		Paddle detection is better on lower part of
-		camera feed than top. 
-		Need a better definition for
-		green.
-		Also, the paddle blob threshold must be adjusted.
-		When the blob threshold is smaller, we can bring
-		down the smallest possible valid blob without 
-		worrying that false positives will be getting in.
+	3/7 Five Hour Rally Notes:
+	Red would not work - too much red in the lights. 
+
+	For persistant paddle tracking. Start off with 
+	everyone's paddles revealed. Assign an id to every 
+	center via Dictionary. False paddles will be
+	eliminated by checking if they are one of the IDed 
+	paddles. 
+	
+	Most importantly, we only want the audience to
+	show their paddles all at once a single time.
+	We should save the ids and centers outside 
+	the run so we have them should anything go 
+	wrong. We only rewrite that stash of ids and 
+	centers if we are at the "calibration" scene again.
+
 	*/
 
-	/*
-		Professor Lawson Meeting 2/27
-		Try green larger than average of blue and red
-		Try green larger than each of the other two
-		After thoughts: THRESHOLD should be paddle's 
-		width and paddles should be 2 paddle widths 
-		apart? Next DCC trip, we'll get the right isGreen
-		definition and then measure paddle widths at 
-		back and front of room.
-	*/
-
-	/*
-		2/28 Distance and Color Testing in the DCC
-		Front and Center of the Room Paddle Size - 78.1
-		Back and Center Paddle Width - 14
-	*/
 }
