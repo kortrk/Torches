@@ -57,11 +57,11 @@ public class CameraFeed : MonoBehaviour {
 	int WIDTH = 1280;
 	int HEIGHT = 720;
 	int THRESHOLD = 14; 
-	float SCREEN_SCALEDOWN = 1f;//Unity struggles with such large coordinates
-	int TOP_PADDLE_Y = 467; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 194; //        "       bottom paddle
-	int TOP_PADDLE_W = 19;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_W = 67; //paddle size with row in lecture hall
+	float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
+	int TOP_PADDLE_Y = 531; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 256; //        "       bottom paddle
+	int TOP_PADDLE_W = 25;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_W = 72; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -120,12 +120,12 @@ public class CameraFeed : MonoBehaviour {
 		//TEST
 		//drawCentersToScreen ();
 		if (Input.GetKeyDown (KeyCode.B) || Input.GetMouseButton(2)) {
-			//drawBlobsToScreen ();
+			drawBlobsToScreen ();
 			print ("Number of green blobs: "+green_blobs.Count);
 			print ("Number of green pixels found: " + num_green_found);
 		}
-		mouseColorTest();
-		drawDistance();
+		//mouseColorTest();
+		//drawDistance();
 	}
 		
 	Vector2 mouseInWorld(){
@@ -232,7 +232,7 @@ public class CameraFeed : MonoBehaviour {
 		for (int x = 0; x < green_blobs.Count; x++) {
 			Color c = new Color (Random.Range (0f, 1f), Random.Range (0f, 1f), Random.Range (0f, 1f));
 			Vector2 p = green_blobs [x].getCenter ();
-			GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/10f, p.y/10f, 0), Quaternion.identity);
+			GameObject pixel = (GameObject) Instantiate (single_pixel, new Vector3 (p.x/SCREEN_SCALEDOWN, p.y/SCREEN_SCALEDOWN, 0), Quaternion.identity);
 			pixel.transform.localScale = new Vector3 (100, 100, 1);
 			pixel.GetComponent<SpriteRenderer> ().color = c;
 			pixel.transform.parent = container.transform;
@@ -273,7 +273,7 @@ public class CameraFeed : MonoBehaviour {
 		for (int i = 0; i <= 720; i++) { //each i is an input y location
 			result [i] = new HeightInfo ();
 			float width_here = m * i + b;
-			result [i].threshold = width_here * .55f; //a little bigger for leeway
+			result [i].threshold = width_here; //a little bigger for leeway
 			result [i].min_pixels = width_here;// * width_here * .8f; 
 			//we use 80% of the pixels we're expecting in a paddle
 			//as our threshold so we know that we're giving some leeway
