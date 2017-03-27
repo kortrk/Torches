@@ -56,14 +56,13 @@ public class HeightInfo{
 
 public class CameraFeed : MonoBehaviour {
 	//constants
-	int WIDTH = 1280;
-	int HEIGHT = 720;
-	int THRESHOLD = 14; 
-	float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
-	int TOP_PADDLE_Y = 548; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 360; //        "       bottom paddle
-	int TOP_PADDLE_H = 28;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_H = 86; //paddle size with row in lecture hall
+	public int WIDTH = 1280;
+	public int HEIGHT = 720;
+	public float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
+	int TOP_PADDLE_Y = 650; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 344; //        "       bottom paddle
+	int TOP_PADDLE_H = 32;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_H = 96; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -71,12 +70,15 @@ public class CameraFeed : MonoBehaviour {
 	public GameObject single_pixel;
 
 	//Blob
-	List<Blob> green_blobs;
+	public List<Blob> green_blobs;
 	WebCamTexture webcam;
 	HeightInfo[] expected_dimensions;
 
 	//Blob Persistance
 	Dictionary<Vector2, int> locations_and_ids;
+
+	//Show Control
+	ShowControl sc;
 
 	//TEST
 	List<Vector3> dist_points;
@@ -112,6 +114,8 @@ public class CameraFeed : MonoBehaviour {
 
 		locations_and_ids = new Dictionary<Vector2, int> ();
 
+		sc = GetComponent<ShowControl> ();
+
 		//TEST
 		dist_points = new List<Vector3>();
 		//print(isGreen (94 / 255f, 12 / 255f, 88 / 255f));
@@ -123,25 +127,31 @@ public class CameraFeed : MonoBehaviour {
 		getPaddleBlobs ();
 
 		//TEST
-		drawCentersToScreen ();
+		//drawCentersToScreen ();
 		if (Input.GetKeyDown (KeyCode.B) || Input.GetMouseButton(2)) {
-			drawBlobsToScreen ();
+			//drawBlobsToScreen ();
 			print ("Number of green blobs: "+green_blobs.Count);
-			print ("Number of green pixels found: " + num_green_found);
+			string all_ids = "";
+			foreach (Blob b in green_blobs)
+				all_ids += b.id + ", ";
+			print ("IDs present: " + all_ids);
+			//print ("Number of green pixels found: " + num_green_found);
 		}
 		//mouseColorTest();
 		//drawDistance();
 
-		if (Input.GetKeyDown (KeyCode.Q) || Input.GetMouseButtonDown(1)) {
+		if (Input.GetKeyDown (KeyCode.R) || Input.GetMouseButtonDown(1)) {
 			assignIDs ();
 			print ("IDs assigned for " + locations_and_ids.Count+" paddle centers");
 		}
 
-		if (Input.GetMouseButtonDown (0)) {
+		sc.ShowBusiness (green_blobs);
+
+		/*if (Input.GetMouseButtonDown (0)) {
 			foreach (Blob b in green_blobs) {
 				print (b.id);
 			}
-		}
+		}*/
 	}
 		
 	Vector2 mouseInWorld(){
@@ -203,10 +213,11 @@ public class CameraFeed : MonoBehaviour {
 						break;
 					}
 				}
-				if (x.id == -1) {
-					//we could use this check to eliminate paddles that
+				if (x.id == -1 && sc.phase!="stars"/*or any other phase where having no id is ok*/) {
+					//we use this check to eliminate paddles that
 					//weren't in the original id assignment
-					x.id = locations_and_ids.Count;
+					continue;
+					//x.id = locations_and_ids.Count;
 				}
 				
 				keepers.Add (x);
@@ -358,6 +369,9 @@ public class CameraFeed : MonoBehaviour {
 
 	/*
 		3/8 Use lights setting 4 in DCC 318.
+		We need a hoisting mechanism to lift camera
+		55.25 inches off the top of the table at the 
+		front of the room. 7 feet in height total.
 	*/
 
 }
