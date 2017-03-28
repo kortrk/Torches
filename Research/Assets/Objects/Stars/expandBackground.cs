@@ -5,7 +5,8 @@ using UnityEngine;
 public class expandBackground : MonoBehaviour {
 	float original_width;
 	float original_height;
-
+	bool get_white = false;
+	public Sprite white_background;
 
 	// Use this for initialization
 	void Start () {
@@ -25,5 +26,15 @@ public class expandBackground : MonoBehaviour {
 		if (bounds_size.y < original_height) {
 			transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y+2500, 1);
 		}
+		Color sr_color = GetComponent<SpriteRenderer> ().color;
+		if (get_white && sr_color.a < 1f) {
+			GetComponent<SpriteRenderer> ().color = new Color (1f, 1f, 1f, sr_color.a + .01f); 
+		}
+	}
+
+	public IEnumerator whiten(){
+		yield return new WaitForSeconds (1f);
+		GetComponent<SpriteRenderer> ().sprite = white_background;
+		get_white = true;
 	}
 }

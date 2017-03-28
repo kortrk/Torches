@@ -303,6 +303,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 312ed96dc6bd9ad41a0cf8fb9872e2d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  phase: intro
+  paddle_center_prefab: {fileID: 1855934086462674, guid: 189efcb3eaafdd046995d13b1273850c,
+    type: 2}
   single_star_prefab: {fileID: 1814229615304450, guid: 47fa24d8da8777145ab6af5f9fc7e98e,
     type: 2}
   star_back_prefab: {fileID: 1882431708135048, guid: 2152785ffcb815c4e9fa843b065909ec,
@@ -318,6 +321,14 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 4ad3233c5da06b2408755745b8ec0791, type: 3}
   - {fileID: 21300000, guid: 97dc7581adcf9804cae779725c6f5d3e, type: 3}
   - {fileID: 21300000, guid: 10eff2097bfcc2849ab955df3db93fef, type: 3}
+  bubble_prefab: {fileID: 1410247539564866, guid: fcb69ab1fa370e84595825dd45fdb9b1,
+    type: 2}
+  heart_prefab: {fileID: 1174273665896092, guid: c290e391a0b07104cbed2faa7e728c5c,
+    type: 2}
+  heart_particles_prefab: {fileID: 1662878252500152, guid: e68cfb584b3545148a54b17904a51e9f,
+    type: 2}
+  shape_circle_prefab: {fileID: 1474441790414926, guid: 8ef232b652a406e439f72dd2e58cf8bf,
+    type: 2}
 --- !u!1 &1302342519
 GameObject:
   m_ObjectHideFlags: 0

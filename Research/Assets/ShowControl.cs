@@ -13,10 +13,11 @@ public class ShowControl : MonoBehaviour {
 	List<Blob> paddles;
 	AudioSource music;
 	//phase dictates what group of behaviors is active.
-	public string phase = "stars"; //for versatility, I use strings rather than #s
+	public string phase = "bubbles"; //for versatility, I use strings rather than #s
 
 	//MULTI-PHASE VARIABLES
-
+	int number_of_ids = 0;
+	public GameObject paddle_center_prefab;
 
 	//SPECIFIC PHASE VARIABLES
 
@@ -32,6 +33,17 @@ public class ShowControl : MonoBehaviour {
 	GameObject[] star_array;
 	Vector3[] star_assignments; //star num, frame interval, pos in interval
 
+	//"bubbles"
+	public GameObject bubble_prefab;
+	int min_onscreen_bubbles = 10;
+
+	//"heart"
+	public GameObject heart_prefab;
+	bool shape_color_bursts_active = false;
+	bool[] heart_ids_used;
+	public GameObject heart_particles_prefab;
+	public GameObject shape_circle_prefab;
+
 	void Start () {
 		cf = GetComponent<CameraFeed> ();
 		HEIGHT = cf.HEIGHT;
@@ -43,6 +55,8 @@ public class ShowControl : MonoBehaviour {
 
 		star_array = new GameObject[MAX_PADDLES+2];
 		star_assignments = new Vector3[MAX_PADDLES+2];
+
+		heart_ids_used = new bool[MAX_PADDLES + 2];
 
 		StartPhase (phase);
 
@@ -83,6 +97,7 @@ public class ShowControl : MonoBehaviour {
 			if (Input.GetKeyDown (KeyCode.R)) {
 				//pressing R activates the function assignIDs in CameraFeed
 				positions_recorded = true;
+				number_of_ids = paddles.Count;
 			}
 
 			break;
@@ -108,6 +123,33 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 		
 		case "bubbles":
+			#region
+			if (Random.value > .9) {
+				GameObject b = (GameObject)Instantiate (bubble_prefab);
+				Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
+				b.GetComponent<bubbleBehavior> ().setStartAndGoal (transform.position,
+					quad_bounds.size.x, quad_bounds.size.y, (Random.value > .5f));
+			}
+			break;
+			#endregion
+
+		case "heart":
+			foreach (Blob p in paddles) {
+				if (!heart_ids_used [p.id] && shape_color_bursts_active) {
+					Instantiate (heart_particles_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+					heart_ids_used [p.id] = true;
+					GameObject circle = (GameObject)Instantiate (shape_circle_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
+					circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
+				}
+			}
+			//TEST
+			if (Input.GetMouseButtonDown(0) && shape_color_bursts_active) {
+				Instantiate (heart_particles_prefab, Input.mousePosition, Quaternion.identity);
+				GameObject circle = (GameObject)Instantiate (shape_circle_prefab, Input.mousePosition, Quaternion.identity);
+				Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
+				circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
+			}
 			break;
 		}
 	}
@@ -162,19 +204,35 @@ public class ShowControl : MonoBehaviour {
 			//set variables
 
 			//don't change music unless we're way far away
-			if (music.time < 19.5f || music.time > 82.579f) {
-				//bubbles should start at 82.579 seconds
+			if (music.time < 19.5f || music.time > 71.97f) {
+				//bubbles should start at 71.971 seconds
 				music.time = 56.89f;
 			}
 
 			//set when the next phase starts
-			StartCoroutine(EndTimer(79.971f - music.time, "stars twinkling"));
+			StartCoroutine(EndTimer(71.971f - music.time, "stars twinkling"));
 			break;
 			#endregion
 		
 		case "bubbles":
-			music.time = 79.971f;
+			#region
+			music.time = 71.971f;
 			//set up to end this phase
+			StartCoroutine(EndTimer(129.756f - music.time, "bubbles")); 
+			//heart starts at 2 min 9 sec 756 millis
+			break;
+			#endregion
+
+		case "heart":
+			music.time = 129.756f;
+			GameObject background = GameObject.Find ("star background(Clone)");
+			if (!background)
+				background = Instantiate (star_back_prefab);
+			StartCoroutine (background.GetComponent<expandBackground> ().whiten ());
+			//we allow the heart to start being revealed when the violin comes in
+			//in the soundtrack, at 2 min 23 sec 713 millis
+			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
+			//set up when this ends
 			break;
 		}
 			
@@ -205,6 +263,7 @@ public class ShowControl : MonoBehaviour {
 			bubbleBehavior[] bubbles_left = GameObject.FindObjectsOfType<bubbleBehavior> ();
 			foreach (bubbleBehavior b in bubbles_left)
 				b.Pop ();
+			StartPhase ("heart");
 			break;
 		}
 			
@@ -241,8 +300,29 @@ public class ShowControl : MonoBehaviour {
 		EndPhase (phase_to_end);
 	}
 
-	//To do:
-	//	Fix locations with the SCREEN_SCALEDOWN
+	void drawPaddleCenters(){
+		GameObject container;
+		container = GameObject.Find ("Centers");
+		if (container) {
+			//delete all the old stars
+			Destroy (container);
+		}
+		container = new GameObject ();
+		container.name = "Centers"; 
+		foreach (Blob paddle in paddles) {
+			GameObject new_center = (GameObject)Instantiate (paddle_center_prefab, paddle.getCenter (), Quaternion.identity);
+			new_center.transform.parent = container.transform;
+		}
+		//TEST 
+		GameObject mouse_center = (GameObject) Instantiate (paddle_center_prefab, Input.mousePosition/3f, Quaternion.identity);
+		mouse_center.transform.parent = container.transform;
+	}
+
+	IEnumerator waitAndActivateHeart(float seconds){
+		yield return new WaitForSeconds (seconds);
+		Instantiate (heart_prefab, transform.position, Quaternion.identity);
+		shape_color_bursts_active = true;
+	}
 
 	/*Schedule:
 	 * Narration from 0s to 18.699s

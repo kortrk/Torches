@@ -7,7 +7,7 @@ public class rotateOnZ : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		rotation_speed = Random.Range (-3f, 3f);
+		rotation_speed = Random.Range (-6f, 6f);
 	}
 	
 	// Update is called once per frame
