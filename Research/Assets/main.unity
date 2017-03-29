@@ -303,7 +303,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 312ed96dc6bd9ad41a0cf8fb9872e2d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  phase: intro
+  phase: RPI
   paddle_center_prefab: {fileID: 1855934086462674, guid: 189efcb3eaafdd046995d13b1273850c,
     type: 2}
   single_star_prefab: {fileID: 1814229615304450, guid: 47fa24d8da8777145ab6af5f9fc7e98e,
@@ -328,6 +328,14 @@ MonoBehaviour:
   heart_particles_prefab: {fileID: 1662878252500152, guid: e68cfb584b3545148a54b17904a51e9f,
     type: 2}
   shape_circle_prefab: {fileID: 1474441790414926, guid: 8ef232b652a406e439f72dd2e58cf8bf,
+    type: 2}
+  expanding_star_prefab: {fileID: 1174273665896092, guid: d9f4b561050114d47b64e64c751b1775,
+    type: 2}
+  star_particles_prefab: {fileID: 1662878252500152, guid: 632a5c64442770d49852fad5a66a7821,
+    type: 2}
+  rpi_logo_prefab: {fileID: 1888261677456770, guid: afe8a1edfafa699479add5bbff462547,
+    type: 2}
+  paint_splat: {fileID: 1755736808437758, guid: b9dabae12d6268945a35e6670b2e555e,
     type: 2}
 --- !u!1 &1302342519
 GameObject:

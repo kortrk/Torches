@@ -44,6 +44,16 @@ public class ShowControl : MonoBehaviour {
 	public GameObject heart_particles_prefab;
 	public GameObject shape_circle_prefab;
 
+	//"expanding star"
+	public GameObject expanding_star_prefab;
+	bool[] star_ids_used;
+	public GameObject star_particles_prefab;
+
+	//"RPI"
+	public GameObject rpi_logo_prefab;
+	public GameObject paint_splat;
+	HashSet<Blob> seen_in_last_frame;
+
 	void Start () {
 		cf = GetComponent<CameraFeed> ();
 		HEIGHT = cf.HEIGHT;
@@ -57,6 +67,10 @@ public class ShowControl : MonoBehaviour {
 		star_assignments = new Vector3[MAX_PADDLES+2];
 
 		heart_ids_used = new bool[MAX_PADDLES + 2];
+
+		star_ids_used = new bool[MAX_PADDLES + 2];
+
+		seen_in_last_frame = new HashSet<Blob> ();
 
 		StartPhase (phase);
 
@@ -134,21 +148,62 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "heart":
+			#region
 			foreach (Blob p in paddles) {
 				if (!heart_ids_used [p.id] && shape_color_bursts_active) {
 					Instantiate (heart_particles_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					heart_ids_used [p.id] = true;
-					GameObject circle = (GameObject)Instantiate (shape_circle_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+					GameObject heart = (GameObject)Instantiate (heart_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
-					circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
+					heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
 				}
 			}
 			//TEST
 			if (Input.GetMouseButtonDown(0) && shape_color_bursts_active) {
 				Instantiate (heart_particles_prefab, Input.mousePosition, Quaternion.identity);
-				GameObject circle = (GameObject)Instantiate (shape_circle_prefab, Input.mousePosition, Quaternion.identity);
-				Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
-				circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
+				GameObject heart = (GameObject)Instantiate (heart_prefab, Input.mousePosition, Quaternion.identity);
+				heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+			}
+			break;
+			#endregion
+
+		case "expanding star":
+			#region
+			foreach (Blob p in paddles) {
+				if (!star_ids_used [p.id]) {
+					Instantiate (star_particles_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+					star_ids_used [p.id] = true;
+					GameObject star = (GameObject)Instantiate (expanding_star_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
+					star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
+				}
+			}
+			//TEST
+			if (Input.GetMouseButtonDown(0)) {
+				Instantiate (star_particles_prefab, Input.mousePosition, Quaternion.identity);
+				GameObject star = (GameObject)Instantiate (expanding_star_prefab, Input.mousePosition, Quaternion.identity);
+				star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+			}
+			break;
+			#endregion
+
+		case "RPI":
+			HashSet<Blob> next_hash = new HashSet<Blob> ();
+			foreach (Blob b in paddles) {
+				if (!seen_in_last_frame.Contains (b)) {
+					//this paddle appeared this frame - it
+					//gets to sling some paint! 
+					Instantiate (paint_splat, b.getCenter (), Quaternion.identity);
+					next_hash.Add (b);
+				}
+				seen_in_last_frame = next_hash;
+			}
+
+			//TEST 
+			if (Input.GetMouseButtonDown (0)) {
+				Instantiate (paint_splat, Input.mousePosition, Quaternion.identity);
 			}
 			break;
 		}
@@ -224,6 +279,7 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "heart":
+			#region
 			music.time = 129.756f;
 			GameObject background = GameObject.Find ("star background(Clone)");
 			if (!background)
@@ -232,6 +288,31 @@ public class ShowControl : MonoBehaviour {
 			//we allow the heart to start being revealed when the violin comes in
 			//in the soundtrack, at 2 min 23 sec 713 millis
 			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
+			//set up when this ends
+			StartCoroutine (EndTimer(172.546f - music.time, "heart"));
+			break;
+			#endregion
+
+		case "expanding star":
+			#region
+			music.time = 172.546f;
+			GameObject background2 = GameObject.Find ("star background(Clone)");
+			if (!background2)
+				background2 = Instantiate (star_back_prefab);
+			background2.GetComponent<expandBackground> ().make_it_blue ();
+			//set up when this ends
+			EndTimer(204.651f - music.time, "expanding star");
+			break;
+			#endregion
+
+		case "RPI":
+			music.time = 204.651f;
+			GameObject background3 = GameObject.Find ("star background(Clone)");
+			if (!background3)
+				background3 = Instantiate (star_back_prefab);
+			background3.GetComponent<expandBackground> ().blacken ();
+			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
+			StartCoroutine (BackgroundToRed (259.913f - music.time, background3));
 			//set up when this ends
 			break;
 		}
@@ -264,6 +345,13 @@ public class ShowControl : MonoBehaviour {
 			foreach (bubbleBehavior b in bubbles_left)
 				b.Pop ();
 			StartPhase ("heart");
+			break;
+
+		case "heart":
+			expandingShape[] hearts = GameObject.FindObjectsOfType<expandingShape> ();
+			foreach (expandingShape e in hearts)
+				Destroy (e.gameObject);
+			StartPhase ("expanding star");
 			break;
 		}
 			
@@ -320,8 +408,14 @@ public class ShowControl : MonoBehaviour {
 
 	IEnumerator waitAndActivateHeart(float seconds){
 		yield return new WaitForSeconds (seconds);
-		Instantiate (heart_prefab, transform.position, Quaternion.identity);
+		//Instantiate (heart_prefab, transform.position, Quaternion.identity);
+		print("hearts active");
 		shape_color_bursts_active = true;
+	}
+
+	IEnumerator BackgroundToRed(float wait_seconds, GameObject background){
+		yield return new WaitForSeconds (wait_seconds);
+		background.GetComponent<expandBackground> ().redden ();
 	}
 
 	/*Schedule:

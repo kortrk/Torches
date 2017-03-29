@@ -9,55 +9,55 @@ Prefab:
     m_Modifications: []
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 0}
-  m_RootGameObject: {fileID: 1174273665896092}
+  m_RootGameObject: {fileID: 1755736808437758}
   m_IsPrefabParent: 1
---- !u!1 &1174273665896092
+--- !u!1 &1755736808437758
 GameObject:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   serializedVersion: 5
   m_Component:
-  - component: {fileID: 4974671222733358}
-  - component: {fileID: 212878119738571040}
-  - component: {fileID: 114325629390088922}
+  - component: {fileID: 4608999507590070}
+  - component: {fileID: 212811559971835246}
+  - component: {fileID: 114544297106870448}
   m_Layer: 0
-  m_Name: heart
+  m_Name: paint splat
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4974671222733358
+--- !u!4 &4608999507590070
 Transform:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1174273665896092}
+  m_GameObject: {fileID: 1755736808437758}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 343, y: 541, z: 0}
-  m_LocalScale: {x: 30, y: 30, z: 1}
+  m_LocalPosition: {x: 574, y: 210, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 10}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &114325629390088922
+--- !u!114 &114544297106870448
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1174273665896092}
+  m_GameObject: {fileID: 1755736808437758}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6555f7830a1fca9429706e28277382e7, type: 3}
+  m_Script: {fileID: 11500000, guid: a3fbba0a4f15bcd488747425f098ea86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!212 &212878119738571040
+--- !u!212 &212811559971835246
 SpriteRenderer:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1174273665896092}
+  m_GameObject: {fileID: 1755736808437758}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -82,8 +82,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
-  m_SortingOrder: 5
-  m_Sprite: {fileID: 21300000, guid: 53d108898ddc61249ad94ffd9a75589f, type: 3}
-  m_Color: {r: 1, g: 0, b: 0.8896551, a: 0.178}
+  m_SortingOrder: 0
+  m_Sprite: {fileID: 21300000, guid: 250a3d28fe43cd34dab03dadd5b46fdb, type: 3}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_FlipX: 0
   m_FlipY: 0
