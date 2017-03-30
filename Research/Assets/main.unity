@@ -303,7 +303,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 312ed96dc6bd9ad41a0cf8fb9872e2d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  phase: RPI
+  phase: fireworks
   paddle_center_prefab: {fileID: 1855934086462674, guid: 189efcb3eaafdd046995d13b1273850c,
     type: 2}
   single_star_prefab: {fileID: 1814229615304450, guid: 47fa24d8da8777145ab6af5f9fc7e98e,
@@ -336,6 +336,10 @@ MonoBehaviour:
   rpi_logo_prefab: {fileID: 1888261677456770, guid: afe8a1edfafa699479add5bbff462547,
     type: 2}
   paint_splat: {fileID: 1755736808437758, guid: b9dabae12d6268945a35e6670b2e555e,
+    type: 2}
+  firework_ball_prefab: {fileID: 1139498875691364, guid: f9277f117bd1c504f83cce3e30e8e10f,
+    type: 2}
+  basic_burst_prefab: {fileID: 1609513766525638, guid: cbba6654dc7dffa4a81b668a1170890e,
     type: 2}
 --- !u!1 &1302342519
 GameObject:

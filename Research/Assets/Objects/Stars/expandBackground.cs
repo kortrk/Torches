@@ -3,79 +3,68 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class expandBackground : MonoBehaviour {
-	float original_width;
-	float original_height;
-	bool get_white = false;
-	bool get_blue = false;
-	bool get_black = false;
-	bool get_red = false;
-	public Sprite white_background;
-	float progress_to_blue = 0f;
-	float progress_to_red = 0f;
-	Color chosen_blue;
+	float goal_width;
+	float goal_height;
+
+	float start_time;
+	float change_time;
+	Color old_color;
+	Color new_color;
+	float original_alpha;
+	float goal_alpha;
+	bool changing = false;
+	public bool grow = false;
+
 
 	// Use this for initialization
 	void Start () {
-		original_width = GetComponent<SpriteRenderer> ().bounds.size.x;
-		original_height = GetComponent<SpriteRenderer> ().bounds.size.y;
-		chosen_blue = new Color (0f, 0f, 75f);
+		GameObject quad = GameObject.Find ("Quad");
+		goal_width = quad.GetComponent<MeshRenderer> ().bounds.size.x;
+		goal_height = quad.GetComponent<MeshRenderer> ().bounds.size.y;
+		transform.position = quad.transform.position;
 
-		transform.localScale = Vector3.zero;
+		if (!grow) {
+			float current_w = GetComponent<SpriteRenderer>().bounds.size.x;
+			float current_h = GetComponent<SpriteRenderer>().bounds.size.y;
+			transform.localScale = 
+				new Vector2 (transform.localScale.x * (goal_width / current_w),
+					transform.localScale.y * (goal_height / current_h));
+		} else {
+			transform.localScale = Vector3.zero;
+		}
 
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		Vector3 bounds_size = GetComponent<SpriteRenderer> ().bounds.size;
-		if (bounds_size.x < original_width) {
-			transform.localScale = new Vector3(transform.localScale.x+5000, transform.localScale.y, 1);
+		if (grow) {
+			Vector3 bounds_size = GetComponent<SpriteRenderer> ().bounds.size;
+			if (bounds_size.x < goal_width) {
+				transform.localScale = new Vector3 (transform.localScale.x + 5000, transform.localScale.y, 1);
+			}
+			if (bounds_size.y < goal_height) {
+				transform.localScale = new Vector3 (transform.localScale.x, transform.localScale.y + 2500, 1);
+			}
 		}
-		if (bounds_size.y < original_height) {
-			transform.localScale = new Vector3(transform.localScale.x, transform.localScale.y+2500, 1);
-		}
-		Color sr_color = GetComponent<SpriteRenderer> ().color;
-		if (get_white && sr_color.a < 1f) {
-			GetComponent<SpriteRenderer> ().color = new Color (1f, 1f, 1f, sr_color.a + .01f); 
-			if (sr_color.a >= 1f) get_white = false; //make sure this doesn't restart later in another part of the show
-		}
-		if (get_blue) {
-			GetComponent<SpriteRenderer> ().color = Color.Lerp (Color.white, chosen_blue, progress_to_blue);
-			progress_to_blue += .03f;
-			if (sr_color == chosen_blue)
-				get_blue = false;
-		}
-		if (get_black) {
-			float fade_red = Mathf.Ceil(sr_color.r)*.1f; //these will be non-zero
-			float fade_green = Mathf.Ceil(sr_color.g)*.1f;//only if r,g,b respectively
-			float fade_blue = Mathf.Ceil(sr_color.b)*.1f;//are non-zero
-			GetComponent<SpriteRenderer> ().color = new Color(sr_color.r - fade_red, sr_color.g - fade_green, sr_color.b - fade_blue);
-			if (sr_color == Color.black)
-				get_black = false;
-		}
-		if (get_red) {
-			GetComponent<SpriteRenderer> ().color = Color.Lerp (Color.black, Color.red, progress_to_red);
-			progress_to_red += .01f;
-		}
+		if (changing) changeColor ();
 	}
 
-	public IEnumerator whiten(){
-		yield return new WaitForSeconds (1f);
-		GetComponent<SpriteRenderer> ().sprite = white_background;
-		get_white = true;
+	public void startSwitchColor(Color goal_color, float transparency, float time){
+		start_time = Time.time;
+		change_time = time;
+		old_color = GetComponent<SpriteRenderer> ().color;
+		new_color = goal_color;
+		original_alpha = old_color.a;
+		goal_alpha = transparency;
+		changing = true;
 	}
 
-	public void make_it_blue(){
-		GetComponent<SpriteRenderer> ().sprite = white_background;
-		get_blue = true;
-	}
-
-	public void blacken(){
-		GetComponent<SpriteRenderer> ().sprite = white_background;
-		get_black = true;
-	}
-
-	public void redden(){
-		GetComponent<SpriteRenderer> ().sprite = white_background;
-		get_red = true;
+	void changeColor(){
+		float percentage = (Time.time - start_time) / change_time;
+		SpriteRenderer sr = GetComponent<SpriteRenderer>();
+		sr.color = Color.Lerp (old_color, new_color, percentage);
+		float new_alpha = Mathf.Lerp (original_alpha, goal_alpha, percentage);
+		sr.color = new Color (sr.color.r, sr.color.g, sr.color.b, new_alpha);
+		if (percentage >= 1f) changing = false;
 	}
 }

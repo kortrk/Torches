@@ -16,8 +16,8 @@ public class ShowControl : MonoBehaviour {
 	public string phase = "bubbles"; //for versatility, I use strings rather than #s
 
 	//MULTI-PHASE VARIABLES
-	int number_of_ids = 0;
 	public GameObject paddle_center_prefab;
+	GameObject background;
 
 	//SPECIFIC PHASE VARIABLES
 
@@ -35,7 +35,6 @@ public class ShowControl : MonoBehaviour {
 
 	//"bubbles"
 	public GameObject bubble_prefab;
-	int min_onscreen_bubbles = 10;
 
 	//"heart"
 	public GameObject heart_prefab;
@@ -54,6 +53,14 @@ public class ShowControl : MonoBehaviour {
 	public GameObject paint_splat;
 	HashSet<Blob> seen_in_last_frame;
 
+	//"fireworks"
+	public GameObject firework_ball_prefab; //travels and then bursts
+	public GameObject basic_burst_prefab;
+	bool store = true;
+	Dictionary<int, Vector2> stored_bursts;
+	Vector3 firework_launch_loc;
+	Color[] firework_colors;
+
 	void Start () {
 		cf = GetComponent<CameraFeed> ();
 		HEIGHT = cf.HEIGHT;
@@ -71,6 +78,12 @@ public class ShowControl : MonoBehaviour {
 		star_ids_used = new bool[MAX_PADDLES + 2];
 
 		seen_in_last_frame = new HashSet<Blob> ();
+
+		stored_bursts = new Dictionary<int, Vector2> ();
+		firework_launch_loc = new Vector3 (transform.position.x, transform.position.y - GetComponent<MeshRenderer>().bounds.size.y/2);
+		firework_colors = new Color[MAX_PADDLES + 2];
+		for (int ci = 0; ci < firework_colors.Length; ci++)
+			firework_colors [ci] = Color.HSVToRGB (Random.Range (0f, 1f), Random.Range (.75f, 1f), 1f);
 
 		StartPhase (phase);
 
@@ -111,7 +124,6 @@ public class ShowControl : MonoBehaviour {
 			if (Input.GetKeyDown (KeyCode.R)) {
 				//pressing R activates the function assignIDs in CameraFeed
 				positions_recorded = true;
-				number_of_ids = paddles.Count;
 			}
 
 			break;
@@ -206,6 +218,27 @@ public class ShowControl : MonoBehaviour {
 				Instantiate (paint_splat, Input.mousePosition, Quaternion.identity);
 			}
 			break;
+
+		case "fireworks":
+			foreach (Blob p in paddles) {
+				if (store) {
+					stored_bursts.Add (p.id, p.getCenter());
+				} else {
+					GameObject f = (GameObject)Instantiate (firework_ball_prefab);
+					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], basic_burst_prefab);
+				}
+			}
+
+			//TEST 
+			if (Input.GetMouseButtonDown (0)) {
+				if (store) {
+					stored_bursts.Add (Random.Range(0, MAX_PADDLES), Input.mousePosition);
+				} else {
+					GameObject f = (GameObject)Instantiate (firework_ball_prefab);
+					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition, firework_colors [Random.Range(0, MAX_PADDLES)], basic_burst_prefab);
+				}
+			}
+			break;
 		}
 	}
 
@@ -220,7 +253,7 @@ public class ShowControl : MonoBehaviour {
 		case "intro":
 			#region
 			music.time = 0;
-			StartCoroutine(EndTimer (19.309f, "intro"));
+			StartCoroutine(EndTimer (19.309f - music.time, "intro"));
 			break;
 			#endregion
 
@@ -237,7 +270,9 @@ public class ShowControl : MonoBehaviour {
 
 			//make expanding black background - it handles its own expansion
 			Vector3 center_screen = new Vector3 (WIDTH / SCREEN_SCALEDOWN * .5f, HEIGHT / SCREEN_SCALEDOWN * .5f, 0);
-			Instantiate (star_back_prefab, center_screen, Quaternion.identity);
+			background = Instantiate (star_back_prefab, center_screen, Quaternion.identity);
+			background.GetComponent<expandBackground>().grow = true;
+			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, 0f);
 
 			//Assign a star to every id
 			for (int x = 0; x <= MAX_PADDLES; x++) {
@@ -281,10 +316,10 @@ public class ShowControl : MonoBehaviour {
 		case "heart":
 			#region
 			music.time = 129.756f;
-			GameObject background = GameObject.Find ("star background(Clone)");
 			if (!background)
-				background = Instantiate (star_back_prefab);
-			StartCoroutine (background.GetComponent<expandBackground> ().whiten ());
+				background = Instantiate (star_back_prefab,transform.position, Quaternion.identity);
+			background.GetComponent<expandBackground>().startSwitchColor(Color.white, .25f, 2f);
+			background.GetComponent<expandBackground>().grow = false;
 			//we allow the heart to start being revealed when the violin comes in
 			//in the soundtrack, at 2 min 23 sec 713 millis
 			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
@@ -296,24 +331,46 @@ public class ShowControl : MonoBehaviour {
 		case "expanding star":
 			#region
 			music.time = 172.546f;
-			GameObject background2 = GameObject.Find ("star background(Clone)");
-			if (!background2)
-				background2 = Instantiate (star_back_prefab);
-			background2.GetComponent<expandBackground> ().make_it_blue ();
+			if (!background)
+				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
+			background.GetComponent<expandBackground> ().
+			  startSwitchColor(new Color(0f,0f,75f), .25f, 1.5f);
 			//set up when this ends
-			EndTimer(204.651f - music.time, "expanding star");
+			StartCoroutine(EndTimer(204.651f - music.time, "expanding star"));
 			break;
 			#endregion
 
 		case "RPI":
 			music.time = 204.651f;
-			GameObject background3 = GameObject.Find ("star background(Clone)");
-			if (!background3)
-				background3 = Instantiate (star_back_prefab);
-			background3.GetComponent<expandBackground> ().blacken ();
+			if (!background)
+				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 1.5f);
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
-			StartCoroutine (BackgroundToRed (259.913f - music.time, background3));
+			StartCoroutine (BackgroundToRed (259.913f - music.time, background));
 			//set up when this ends
+			StartCoroutine(EndTimer(273.269f - music.time, "RPI"));
+			break;
+
+		case "second intro":
+			music.time = 273.269f;
+			if (!background)
+				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .25f, 16f);
+			break;
+
+		case "fireworks":
+			music.time = 400.154f;
+
+			if (!background)
+				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
+			seen_in_last_frame.Clear ();
+			foreach (Blob p in paddles) {
+				seen_in_last_frame.Add (p);
+			}
+
+			StartCoroutine (fireworksDoStore (406.2f - music.time, false));
+			StartCoroutine (launchStore (406.2f - music.time, basic_burst_prefab));
 			break;
 		}
 			
@@ -332,6 +389,7 @@ public class ShowControl : MonoBehaviour {
 				destroy_stars_container = true;
 				Destroy (GameObject.Find ("Stars"));
 			}
+
 			StartPhase ("stars twinkling");
 			break;
 
@@ -352,6 +410,21 @@ public class ShowControl : MonoBehaviour {
 			foreach (expandingShape e in hearts)
 				Destroy (e.gameObject);
 			StartPhase ("expanding star");
+			break;
+
+		case "expanding star":
+			expandingShape[] stars = GameObject.FindObjectsOfType<expandingShape> ();
+			foreach (expandingShape e in stars)
+				Destroy (e.gameObject);
+			StartPhase ("RPI");
+			break;
+
+		case "RPI":
+			paintSplatBehavior[] splats = GameObject.FindObjectsOfType<paintSplatBehavior> ();
+			foreach (paintSplatBehavior p in splats)
+				Destroy (p.gameObject);
+			Destroy (GameObject.FindObjectOfType<rpiLogoBehavior> ().gameObject);
+			StartPhase ("second intro");
 			break;
 		}
 			
@@ -406,8 +479,8 @@ public class ShowControl : MonoBehaviour {
 		mouse_center.transform.parent = container.transform;
 	}
 
-	IEnumerator waitAndActivateHeart(float seconds){
-		yield return new WaitForSeconds (seconds);
+	IEnumerator waitAndActivateHeart(float wait_seconds){
+		yield return new WaitForSeconds (wait_seconds);
 		//Instantiate (heart_prefab, transform.position, Quaternion.identity);
 		print("hearts active");
 		shape_color_bursts_active = true;
@@ -415,7 +488,23 @@ public class ShowControl : MonoBehaviour {
 
 	IEnumerator BackgroundToRed(float wait_seconds, GameObject background){
 		yield return new WaitForSeconds (wait_seconds);
-		background.GetComponent<expandBackground> ().redden ();
+		background.GetComponent<expandBackground> ().startSwitchColor (Color.red, 1f, 3f);
+	}
+
+	IEnumerator fireworksDoStore(float wait_seconds, bool store_val){
+		yield return new WaitForSeconds (wait_seconds);
+		store = store_val;
+	}
+
+	IEnumerator launchStore(float wait_seconds, GameObject chosen_burst){
+		yield return new WaitForSeconds (wait_seconds);
+		foreach (int key in stored_bursts.Keys) {
+			GameObject new_firework = (GameObject) Instantiate (chosen_burst, stored_bursts[key], Quaternion.identity);
+			ParticleSystem.MainModule settings = new_firework.GetComponent<ParticleSystem>().main;
+			print (key);
+			settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors[key]);
+		}
+		stored_bursts.Clear ();
 	}
 
 	/*Schedule:
