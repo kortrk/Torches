@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class fireworkBallBehavior : MonoBehaviour {
-	float travel_rate = 100f;
+	float travel_rate = 25f;
 	Vector3 destination;
 	bool move = true;
 	GameObject burst;
@@ -27,6 +27,8 @@ public class fireworkBallBehavior : MonoBehaviour {
 			GameObject new_firework = (GameObject) Instantiate (burst, transform.position, Quaternion.identity);
 			ParticleSystem.MainModule settings = new_firework.GetComponent<ParticleSystem>().main;
 			settings.startColor = new ParticleSystem.MinMaxGradient (color);
+			//ParticleSystem.EmissionModule emission = GetComponent<ParticleSystem>().emission;
+			//emission.rateOverTime = new ParticleSystem.MinMaxCurve (0f);
 			Destroy (gameObject);
 		}
 	}

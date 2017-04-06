@@ -40,10 +40,10 @@ public class expandBackground : MonoBehaviour {
 		if (grow) {
 			Vector3 bounds_size = GetComponent<SpriteRenderer> ().bounds.size;
 			if (bounds_size.x < goal_width) {
-				transform.localScale = new Vector3 (transform.localScale.x + 5000, transform.localScale.y, 1);
+				transform.localScale = new Vector3 (transform.localScale.x + 1000, transform.localScale.y, 1);
 			}
 			if (bounds_size.y < goal_height) {
-				transform.localScale = new Vector3 (transform.localScale.x, transform.localScale.y + 2500, 1);
+				transform.localScale = new Vector3 (transform.localScale.x, transform.localScale.y + 700, 1);
 			}
 		}
 		if (changing) changeColor ();

@@ -40,7 +40,7 @@ public class bubbleBehavior : MonoBehaviour {
 			if (Vector2.Distance (p.getCenter ()/cf.SCREEN_SCALEDOWN, transform.position) < GetComponent<SpriteRenderer> ().bounds.size.x*.5f)
 				Pop ();
 
-		if (Vector2.Distance (transform.position, Input.mousePosition) < GetComponent<SpriteRenderer> ().bounds.size.x*.5f)
+		if (Vector2.Distance (transform.position, Input.mousePosition/cf.SCREEN_SCALEDOWN) < GetComponent<SpriteRenderer> ().bounds.size.x*.5f)
 			Pop ();
 	}
 

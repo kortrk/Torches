@@ -5,8 +5,8 @@ using UnityEngine;
 public class ShowControl : MonoBehaviour {
 	//CONSTANTS
 	int MAX_PADDLES = 48;
-	int WIDTH = 1280;
-	int HEIGHT = 720;
+	int WIDTH = 128;
+	int HEIGHT = 72;
 	float SCREEN_SCALEDOWN = 1f;
 
 	CameraFeed cf;
@@ -62,6 +62,7 @@ public class ShowControl : MonoBehaviour {
 	Color[] firework_colors;
 
 	void Start () {
+		print (GetComponent<MeshRenderer> ().bounds.size.x);
 		cf = GetComponent<CameraFeed> ();
 		HEIGHT = cf.HEIGHT;
 		WIDTH = cf.WIDTH;
@@ -167,15 +168,15 @@ public class ShowControl : MonoBehaviour {
 					heart_ids_used [p.id] = true;
 					GameObject heart = (GameObject)Instantiate (heart_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
-					heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+					heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, false);
 					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
 				}
 			}
 			//TEST
 			if (Input.GetMouseButtonDown(0) && shape_color_bursts_active) {
-				Instantiate (heart_particles_prefab, Input.mousePosition, Quaternion.identity);
-				GameObject heart = (GameObject)Instantiate (heart_prefab, Input.mousePosition, Quaternion.identity);
-				heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+				Instantiate (heart_particles_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
+				GameObject heart = (GameObject)Instantiate (heart_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
+				heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, false);
 			}
 			break;
 			#endregion
@@ -194,8 +195,8 @@ public class ShowControl : MonoBehaviour {
 			}
 			//TEST
 			if (Input.GetMouseButtonDown(0)) {
-				Instantiate (star_particles_prefab, Input.mousePosition, Quaternion.identity);
-				GameObject star = (GameObject)Instantiate (expanding_star_prefab, Input.mousePosition, Quaternion.identity);
+				Instantiate (star_particles_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
+				GameObject star = (GameObject)Instantiate (expanding_star_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
 				star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
 			}
 			break;
@@ -215,7 +216,7 @@ public class ShowControl : MonoBehaviour {
 
 			//TEST 
 			if (Input.GetMouseButtonDown (0)) {
-				Instantiate (paint_splat, Input.mousePosition, Quaternion.identity);
+				Instantiate (paint_splat, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
 			}
 			break;
 
@@ -232,10 +233,10 @@ public class ShowControl : MonoBehaviour {
 			//TEST 
 			if (Input.GetMouseButtonDown (0)) {
 				if (store) {
-					stored_bursts.Add (Random.Range(0, MAX_PADDLES), Input.mousePosition);
+					stored_bursts.Add (Random.Range(0, MAX_PADDLES), Input.mousePosition / SCREEN_SCALEDOWN);
 				} else {
 					GameObject f = (GameObject)Instantiate (firework_ball_prefab);
-					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition, firework_colors [Random.Range(0, MAX_PADDLES)], basic_burst_prefab);
+					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition / SCREEN_SCALEDOWN, firework_colors [Random.Range(0, MAX_PADDLES)], basic_burst_prefab);
 				}
 			}
 			break;
@@ -461,24 +462,6 @@ public class ShowControl : MonoBehaviour {
 		EndPhase (phase_to_end);
 	}
 
-	void drawPaddleCenters(){
-		GameObject container;
-		container = GameObject.Find ("Centers");
-		if (container) {
-			//delete all the old stars
-			Destroy (container);
-		}
-		container = new GameObject ();
-		container.name = "Centers"; 
-		foreach (Blob paddle in paddles) {
-			GameObject new_center = (GameObject)Instantiate (paddle_center_prefab, paddle.getCenter (), Quaternion.identity);
-			new_center.transform.parent = container.transform;
-		}
-		//TEST 
-		GameObject mouse_center = (GameObject) Instantiate (paddle_center_prefab, Input.mousePosition/3f, Quaternion.identity);
-		mouse_center.transform.parent = container.transform;
-	}
-
 	IEnumerator waitAndActivateHeart(float wait_seconds){
 		yield return new WaitForSeconds (wait_seconds);
 		//Instantiate (heart_prefab, transform.position, Quaternion.identity);
@@ -501,7 +484,6 @@ public class ShowControl : MonoBehaviour {
 		foreach (int key in stored_bursts.Keys) {
 			GameObject new_firework = (GameObject) Instantiate (chosen_burst, stored_bursts[key], Quaternion.identity);
 			ParticleSystem.MainModule settings = new_firework.GetComponent<ParticleSystem>().main;
-			print (key);
 			settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors[key]);
 		}
 		stored_bursts.Clear ();

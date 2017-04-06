@@ -5,7 +5,7 @@ using UnityEngine;
 public class expandingShape : MonoBehaviour {
 	Vector2 quad_center;
 	float total_move_distance;
-	float total_rotation_distance;
+	float total_rotation_distance = 0f;
 	bool get_moving = false;
 	Vector3 full_size;
 	bool turn = false;
@@ -22,7 +22,7 @@ public class expandingShape : MonoBehaviour {
 		//print (Vector2.Distance (transform.position, quad_center)+"/"+total_move_distance);
 		float percentage = 1f - (Vector2.Distance (transform.position, quad_center) / total_move_distance);
 		transform.localScale = full_size * percentage;
-		transform.rotation = Quaternion.Euler(0f, 0f, total_rotation_distance*(Vector2.Distance (transform.position, quad_center) / total_move_distance));
+		if (turn) transform.rotation = Quaternion.Euler(0f, 0f, total_rotation_distance*(Vector2.Distance (transform.position, quad_center) / total_move_distance));
 		if (percentage >= 1f) get_moving = false; //stop moving if we're there
 	}
 

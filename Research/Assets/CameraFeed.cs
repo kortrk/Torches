@@ -58,7 +58,7 @@ public class CameraFeed : MonoBehaviour {
 	//constants
 	public int WIDTH = 1280;
 	public int HEIGHT = 720;
-	public float SCREEN_SCALEDOWN = 2f;//Unity struggles with large coordinates
+	public float SCREEN_SCALEDOWN = 10f;//Unity struggles with large coordinates
 	int TOP_PADDLE_Y = 650; //where on screen is the top paddle
 	int BOTTOM_PADDLE_Y = 344; //        "       bottom paddle
 	int TOP_PADDLE_H = 32;    //we use height to predict diminishing..
@@ -87,9 +87,7 @@ public class CameraFeed : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		print ("Reminder: TOP_PADDLE_Y and BOTTOM_\" need to be set");
-		//scale screen
-		transform.localScale = new Vector2 (transform.localScale.x/SCREEN_SCALEDOWN, 
-			transform.localScale.y/SCREEN_SCALEDOWN);
+		//place screen
 		transform.position = new Vector2 (transform.localScale.x / 2, transform.localScale.y / 2);
 
 		//set up the paddle lists
@@ -147,11 +145,9 @@ public class CameraFeed : MonoBehaviour {
 
 		sc.ShowBusiness (green_blobs);
 
-		/*if (Input.GetMouseButtonDown (0)) {
-			foreach (Blob b in green_blobs) {
-				print (b.id);
-			}
-		}*/
+		if (Input.GetMouseButtonDown (0)) {
+			print (Input.mousePosition.y);
+		}
 	}
 		
 	Vector2 mouseInWorld(){
