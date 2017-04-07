@@ -56,10 +56,12 @@ public class ShowControl : MonoBehaviour {
 	//"fireworks"
 	public GameObject firework_ball_prefab; //travels and then bursts
 	public GameObject basic_burst_prefab;
+	public GameObject firework_sparkle_prefab;
 	bool store = true;
 	Dictionary<int, Vector2> stored_bursts;
 	Vector3 firework_launch_loc;
 	Color[] firework_colors;
+	int num_stored_to_launch = 0;
 
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
@@ -342,6 +344,7 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "RPI":
+			#region
 			music.time = 204.651f;
 			if (!background)
 				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
@@ -351,6 +354,7 @@ public class ShowControl : MonoBehaviour {
 			//set up when this ends
 			StartCoroutine(EndTimer(273.269f - music.time, "RPI"));
 			break;
+			#endregion
 
 		case "second intro":
 			music.time = 273.269f;
@@ -370,8 +374,19 @@ public class ShowControl : MonoBehaviour {
 				seen_in_last_frame.Add (p);
 			}
 
+			//initial burst
 			StartCoroutine (fireworksDoStore (406.2f - music.time, false));
 			StartCoroutine (launchStore (406.2f - music.time, basic_burst_prefab));
+			//timed bursts later on in the phase
+			StartCoroutine (fireworksDoStore (431.507f - music.time, true));
+			StartCoroutine (setStorePercentage (435.440f - music.time, .25f));
+			StartCoroutine (launchStorePercentage (435.440f - music.time, basic_burst_prefab));
+			StartCoroutine (launchStorePercentage (436.276f - music.time, basic_burst_prefab));
+			StartCoroutine (launchStorePercentage (439.010f - music.time, basic_burst_prefab));
+			StartCoroutine (launchStorePercentage (439.993f - music.time, basic_burst_prefab));
+			StartCoroutine (clearStoredBursts (441.000f - music.time));
+			StartCoroutine (fireworkSparkle (443.567f - music.time, 3.35f));
+			StartCoroutine (EndTimer (447.702f - music.time, "fireworks"));
 			break;
 		}
 			
@@ -426,6 +441,11 @@ public class ShowControl : MonoBehaviour {
 				Destroy (p.gameObject);
 			Destroy (GameObject.FindObjectOfType<rpiLogoBehavior> ().gameObject);
 			StartPhase ("second intro");
+			break;
+
+		case "fireworks": 
+			stored_bursts.Clear ();
+			StartPhase ("fireworks shapes");
 			break;
 		}
 			
@@ -487,6 +507,58 @@ public class ShowControl : MonoBehaviour {
 			settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors[key]);
 		}
 		stored_bursts.Clear ();
+	}
+
+	/// <summary>
+	/// Sets what percentage of fireworks you want to launch when 
+	/// launchStorePercentage is called.
+	/// </summary>
+	IEnumerator setStorePercentage(float wait_seconds, float percentage){
+		yield return new WaitForSeconds (wait_seconds);
+		num_stored_to_launch = (int) (stored_bursts.Keys.Count * percentage);
+		print ("from percentage " + percentage + " of " + stored_bursts.Keys.Count +
+		" chose launch number " + num_stored_to_launch);
+	}
+
+	/// <summary>
+	/// Launches and removes num_stored_to_launch fireworks, the number 
+	/// of fireworks specified when setStorePercentage was called.
+	/// </summary>
+	/// <returns>The store percentage.</returns>
+	IEnumerator launchStorePercentage(float wait_seconds, GameObject chosen_burst){
+		yield return new WaitForSeconds (wait_seconds);
+		bool use_all = false;
+		int how_many = num_stored_to_launch;
+		List<int> to_remove = new List<int> ();
+		if (how_many < 1) {
+			//if there are too few to split into this percentage, we use
+			//all the fireworks each burst and don't clear them out
+			use_all = true;
+		}
+		foreach (int key in stored_bursts.Keys) {
+			GameObject new_firework = (GameObject) Instantiate (chosen_burst, stored_bursts[key], Quaternion.identity);
+			ParticleSystem.MainModule settings = new_firework.GetComponent<ParticleSystem>().main;
+			settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors[key]);
+			if (!use_all) {
+				how_many--;
+				to_remove.Add (key);
+			}
+			if (how_many <= 0) break;
+		}
+		foreach (int k in to_remove) stored_bursts.Remove (k);
+		//stored_bursts.Clear ();
+	}
+
+	IEnumerator clearStoredBursts(float wait_seconds){
+		yield return new WaitForSeconds (wait_seconds);
+		stored_bursts.Clear ();
+	}
+
+	IEnumerator fireworkSparkle(float wait_seconds, float duration){
+		yield return new WaitForSeconds (wait_seconds);
+		GameObject sparkle = (GameObject) Instantiate (firework_sparkle_prefab, transform.position, Quaternion.identity);
+		yield return new WaitForSeconds (duration);
+		Destroy (sparkle);
 	}
 
 	/*Schedule:

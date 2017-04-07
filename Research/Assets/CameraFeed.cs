@@ -146,7 +146,7 @@ public class CameraFeed : MonoBehaviour {
 		sc.ShowBusiness (green_blobs);
 
 		if (Input.GetMouseButtonDown (0)) {
-			print (Input.mousePosition.y);
+			//print (Input.mousePosition.y);
 		}
 	}
 		
