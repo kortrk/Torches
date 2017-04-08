@@ -22,6 +22,7 @@ GameObject:
   - component: {fileID: 198565254475095386}
   - component: {fileID: 199272143015247016}
   - component: {fileID: 114361800065724574}
+  - component: {fileID: 114473517918078856}
   m_Layer: 0
   m_Name: box fireworks prefab
   m_TagString: Untagged
@@ -51,6 +52,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4fb30869b40a5b94fb16aa09999554bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &114473517918078856
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1678192718470562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d23949f9f3295ff41a32c868891a3636, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!198 &198565254475095386
@@ -272,7 +284,7 @@ ParticleSystem:
       maxColor: {r: 1, g: 1, b: 1, a: 1}
       minMaxState: 0
     startSize:
-      scalar: 1
+      scalar: 1.2
       maxCurve:
         serializedVersion: 2
         m_Curve:

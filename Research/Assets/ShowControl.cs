@@ -51,7 +51,7 @@ public class ShowControl : MonoBehaviour {
 	//"RPI"
 	public GameObject rpi_logo_prefab;
 	public GameObject paint_splat;
-	HashSet<Blob> seen_in_last_frame;
+	HashSet<int> seen_in_last_frame;
 
 	//"fireworks"
 	public GameObject firework_ball_prefab; //travels and then bursts
@@ -63,6 +63,11 @@ public class ShowControl : MonoBehaviour {
 	Color[] firework_colors;
 	int num_stored_to_launch = 0;
 
+	//"fireworks shapes"
+	public GameObject double_burst_prefab;
+	public GameObject box_firework_prefab;
+	public GameObject circle_firework_prefab;
+
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
 		cf = GetComponent<CameraFeed> ();
@@ -72,6 +77,7 @@ public class ShowControl : MonoBehaviour {
 
 		paddles = cf.green_blobs;
 		music = GameObject.Find ("Music").GetComponent<AudioSource>();
+		background = GameObject.Find("star background");
 
 		star_array = new GameObject[MAX_PADDLES+2];
 		star_assignments = new Vector3[MAX_PADDLES+2];
@@ -80,7 +86,7 @@ public class ShowControl : MonoBehaviour {
 
 		star_ids_used = new bool[MAX_PADDLES + 2];
 
-		seen_in_last_frame = new HashSet<Blob> ();
+		seen_in_last_frame = new HashSet<int> ();
 
 		stored_bursts = new Dictionary<int, Vector2> ();
 		firework_launch_loc = new Vector3 (transform.position.x, transform.position.y - GetComponent<MeshRenderer>().bounds.size.y/2);
@@ -205,32 +211,40 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "RPI":
-			HashSet<Blob> next_hash = new HashSet<Blob> ();
+			#region
+			HashSet<int> next_hash = new HashSet<int> ();
 			foreach (Blob b in paddles) {
-				if (!seen_in_last_frame.Contains (b)) {
+				if (!seen_in_last_frame.Contains (b.id)) {
 					//this paddle appeared this frame - it
 					//gets to sling some paint! 
 					Instantiate (paint_splat, b.getCenter (), Quaternion.identity);
-					next_hash.Add (b);
 				}
-				seen_in_last_frame = next_hash;
+				next_hash.Add (b.id);
 			}
+			seen_in_last_frame = next_hash;
 
 			//TEST 
 			if (Input.GetMouseButtonDown (0)) {
 				Instantiate (paint_splat, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
 			}
 			break;
+			#endregion
 
 		case "fireworks":
+			#region
+			HashSet<int> next_hash_f = new HashSet<int> ();
 			foreach (Blob p in paddles) {
-				if (store) {
-					stored_bursts.Add (p.id, p.getCenter());
-				} else {
-					GameObject f = (GameObject)Instantiate (firework_ball_prefab);
-					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], basic_burst_prefab);
+				if (!seen_in_last_frame.Contains (p.id)) {
+					if (store) {
+						stored_bursts.Add (p.id, p.getCenter ());
+					} else {
+						GameObject f = (GameObject)Instantiate (firework_ball_prefab);
+						f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], basic_burst_prefab);
+					}
 				}
+				next_hash_f.Add (p.id);
 			}
+			seen_in_last_frame = next_hash_f;
 
 			//TEST 
 			if (Input.GetMouseButtonDown (0)) {
@@ -241,6 +255,29 @@ public class ShowControl : MonoBehaviour {
 					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition / SCREEN_SCALEDOWN, firework_colors [Random.Range(0, MAX_PADDLES)], basic_burst_prefab);
 				}
 			}
+			break;
+			#endregion
+
+		case "fireworks shapes":
+			HashSet<int> next_hash_fs = new HashSet<int> ();
+			foreach (Blob p in paddles) {
+				if (!seen_in_last_frame.Contains (p.id)) {
+					GameObject f = (GameObject)Instantiate (firework_ball_prefab);
+					f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], chooseSpecialFirework ());
+				}
+				next_hash_fs.Add (p.id);
+			}
+			seen_in_last_frame = next_hash_fs;
+
+			//TEST
+			if (Input.GetMouseButtonDown (0)) {
+				GameObject f = (GameObject)Instantiate (firework_ball_prefab);
+				f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition / SCREEN_SCALEDOWN, firework_colors [Random.Range (0, MAX_PADDLES)], chooseSpecialFirework ());
+			}
+			break;
+
+		case "great torch":
+			
 			break;
 		}
 	}
@@ -257,6 +294,7 @@ public class ShowControl : MonoBehaviour {
 			#region
 			music.time = 0;
 			StartCoroutine(EndTimer (19.309f - music.time, "intro"));
+			background.GetComponent<expandBackground>().startSwitchColor(Color.black, 0f, 0f);
 			break;
 			#endregion
 
@@ -273,7 +311,7 @@ public class ShowControl : MonoBehaviour {
 
 			//make expanding black background - it handles its own expansion
 			Vector3 center_screen = new Vector3 (WIDTH / SCREEN_SCALEDOWN * .5f, HEIGHT / SCREEN_SCALEDOWN * .5f, 0);
-			background = Instantiate (star_back_prefab, center_screen, Quaternion.identity);
+			background.transform.localScale = Vector3.zero;
 			background.GetComponent<expandBackground>().grow = true;
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, 0f);
 
@@ -311,6 +349,7 @@ public class ShowControl : MonoBehaviour {
 			#region
 			music.time = 71.971f;
 			//set up to end this phase
+			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, .5f);
 			StartCoroutine(EndTimer(129.756f - music.time, "bubbles")); 
 			//heart starts at 2 min 9 sec 756 millis
 			break;
@@ -319,8 +358,6 @@ public class ShowControl : MonoBehaviour {
 		case "heart":
 			#region
 			music.time = 129.756f;
-			if (!background)
-				background = Instantiate (star_back_prefab,transform.position, Quaternion.identity);
 			background.GetComponent<expandBackground>().startSwitchColor(Color.white, .25f, 2f);
 			background.GetComponent<expandBackground>().grow = false;
 			//we allow the heart to start being revealed when the violin comes in
@@ -334,8 +371,6 @@ public class ShowControl : MonoBehaviour {
 		case "expanding star":
 			#region
 			music.time = 172.546f;
-			if (!background)
-				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
 			background.GetComponent<expandBackground> ().
 			  startSwitchColor(new Color(0f,0f,75f), .25f, 1.5f);
 			//set up when this ends
@@ -346,8 +381,6 @@ public class ShowControl : MonoBehaviour {
 		case "RPI":
 			#region
 			music.time = 204.651f;
-			if (!background)
-				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 1.5f);
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
 			StartCoroutine (BackgroundToRed (259.913f - music.time, background));
@@ -358,20 +391,16 @@ public class ShowControl : MonoBehaviour {
 
 		case "second intro":
 			music.time = 273.269f;
-			if (!background)
-				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .25f, 16f);
 			break;
 
 		case "fireworks":
 			music.time = 400.154f;
 
-			if (!background)
-				background = Instantiate (star_back_prefab, transform.position, Quaternion.identity);
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
 			seen_in_last_frame.Clear ();
 			foreach (Blob p in paddles) {
-				seen_in_last_frame.Add (p);
+				seen_in_last_frame.Add (p.id);
 			}
 
 			//initial burst
@@ -387,6 +416,11 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (clearStoredBursts (441.000f - music.time));
 			StartCoroutine (fireworkSparkle (443.567f - music.time, 3.35f));
 			StartCoroutine (EndTimer (447.702f - music.time, "fireworks"));
+			break;
+
+		case "fireworks shapes":
+			music.time = 447.702f;
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
 			break;
 		}
 			
@@ -559,6 +593,18 @@ public class ShowControl : MonoBehaviour {
 		GameObject sparkle = (GameObject) Instantiate (firework_sparkle_prefab, transform.position, Quaternion.identity);
 		yield return new WaitForSeconds (duration);
 		Destroy (sparkle);
+	}
+
+	GameObject chooseSpecialFirework(){
+		float choice = Random.value;
+		if (choice < .33f) {
+			return double_burst_prefab;
+		} 
+		else if (choice >= .33f && choice <= .66f) {
+			return box_firework_prefab;
+		} 
+		else
+			return circle_firework_prefab;
 	}
 
 	/*Schedule:
