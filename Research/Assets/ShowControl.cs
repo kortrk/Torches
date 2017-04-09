@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class ShowControl : MonoBehaviour {
 	//CONSTANTS
@@ -18,6 +19,7 @@ public class ShowControl : MonoBehaviour {
 	//MULTI-PHASE VARIABLES
 	public GameObject paddle_center_prefab;
 	GameObject background;
+	int num_total_paddles = -1;
 
 	//SPECIFIC PHASE VARIABLES
 
@@ -67,6 +69,11 @@ public class ShowControl : MonoBehaviour {
 	public GameObject double_burst_prefab;
 	public GameObject box_firework_prefab;
 	public GameObject circle_firework_prefab;
+
+	//"great torch"
+	public GameObject great_torch_prefab;
+	public GameObject slider;
+	public GameObject torch_UI;
 
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
@@ -277,7 +284,8 @@ public class ShowControl : MonoBehaviour {
 			break;
 
 		case "great torch":
-			
+			if (num_total_paddles != -1)
+				slider.GetComponent<Slider>().value = paddles.Count / num_total_paddles;
 			break;
 		}
 	}
@@ -310,7 +318,6 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine(StarTimer (26.534f - music.time, 38.884f - music.time, 49.694f - music.time, 56.4f - music.time, 49.694f));
 
 			//make expanding black background - it handles its own expansion
-			Vector3 center_screen = new Vector3 (WIDTH / SCREEN_SCALEDOWN * .5f, HEIGHT / SCREEN_SCALEDOWN * .5f, 0);
 			background.transform.localScale = Vector3.zero;
 			background.GetComponent<expandBackground>().grow = true;
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, 0f);
@@ -395,6 +402,7 @@ public class ShowControl : MonoBehaviour {
 			break;
 
 		case "fireworks":
+			#region
 			music.time = 400.154f;
 
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
@@ -417,10 +425,19 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (fireworkSparkle (443.567f - music.time, 3.35f));
 			StartCoroutine (EndTimer (447.702f - music.time, "fireworks"));
 			break;
+			#endregion
 
 		case "fireworks shapes":
 			music.time = 447.702f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
+			StartCoroutine(EndTimer(472.672f - music.time, "fireworks shapes"));
+			break;
+
+		case "great torch":
+			music.time = 472.672f;
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
+			Instantiate (great_torch_prefab);
+			torch_UI.SetActive (true);
 			break;
 		}
 			
@@ -480,6 +497,10 @@ public class ShowControl : MonoBehaviour {
 		case "fireworks": 
 			stored_bursts.Clear ();
 			StartPhase ("fireworks shapes");
+			break;
+
+		case "fireworks shapes":
+			StartPhase ("great torch");
 			break;
 		}
 			
@@ -605,6 +626,10 @@ public class ShowControl : MonoBehaviour {
 		} 
 		else
 			return circle_firework_prefab;
+	}
+
+	public void setTotalPaddleNumber(int x){
+		num_total_paddles = x;
 	}
 
 	/*Schedule:

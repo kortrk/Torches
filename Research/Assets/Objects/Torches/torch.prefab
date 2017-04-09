@@ -38,6 +38,7 @@ GameObject:
   - component: {fileID: 4929601232007630}
   - component: {fileID: 198889321674652472}
   - component: {fileID: 199231860398726794}
+  - component: {fileID: 114524397291025442}
   m_Layer: 0
   m_Name: torch fire
   m_TagString: Untagged
@@ -61,7 +62,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4366579199930476
 Transform:
   m_ObjectHideFlags: 1
@@ -123,6 +124,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0601d8218a2c4c84e9258c98df791e2a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &114524397291025442
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1610348309132518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 621ff2167403e0b4da16c403e2306144, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!198 &198889321674652472

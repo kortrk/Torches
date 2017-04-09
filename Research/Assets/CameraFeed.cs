@@ -140,6 +140,7 @@ public class CameraFeed : MonoBehaviour {
 
 		if (Input.GetKeyDown (KeyCode.R) || Input.GetMouseButtonDown(1)) {
 			assignIDs ();
+			sc.setTotalPaddleNumber(locations_and_ids.Count);
 			print ("IDs assigned for " + locations_and_ids.Count+" paddle centers");
 		}
 
