@@ -8,10 +8,11 @@ public class torchGlowBehavior : MonoBehaviour {
 	float currentX = 0;
 	float x_change_rate = .2f; //rate at which x changes. also, a pun.
 	Slider slider;
+	public bool use_slider = true;
 
 	// Use this for initialization
 	void Start () {
-		slider = GameObject.Find ("Slider").GetComponent<Slider> ();
+		if (use_slider) slider = GameObject.Find ("Slider").GetComponent<Slider> ();
 	}
 	
 	// Update is called once per frame
@@ -23,7 +24,7 @@ public class torchGlowBehavior : MonoBehaviour {
 			currentX = 0;
 			currentY = Random.value;
 		}
-		GetComponent<SpriteRenderer> ().color = Color.HSVToRGB (slider.value, 1f, 1f);
+		if (use_slider) GetComponent<SpriteRenderer> ().color = Color.HSVToRGB (slider.value, 1f, 1f);
 		Color current_color = GetComponent<SpriteRenderer> ().color;
 		GetComponent<SpriteRenderer>().color = new Color(current_color.r, current_color.g, current_color.b, 
 			1f - Mathf.PerlinNoise(currentX, currentY)/2f);

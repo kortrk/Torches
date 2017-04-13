@@ -19,7 +19,7 @@ public class ShowControl : MonoBehaviour {
 	//MULTI-PHASE VARIABLES
 	public GameObject paddle_center_prefab;
 	GameObject background;
-	int num_total_paddles = -1;
+	Vector2[] centers;
 
 	//SPECIFIC PHASE VARIABLES
 
@@ -74,6 +74,17 @@ public class ShowControl : MonoBehaviour {
 	public GameObject great_torch_prefab;
 	public GameObject slider;
 	public GameObject torch_UI;
+	GameObject great_torch;
+
+	//"torches"
+	GameObject[] torches;
+	public GameObject indiv_torch_prefab;
+	int[] frames_since_seen;
+	int absence_tolerance = 5; //how long we'll keep a torch around if its paddle disappears
+	bool mouse_held_last_frame = false;
+	GameObject mouse_torch;
+	int frames_since_mouse_seen = 0;
+	bool disrupt_normal_torches = false;
 
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
@@ -85,6 +96,7 @@ public class ShowControl : MonoBehaviour {
 		paddles = cf.green_blobs;
 		music = GameObject.Find ("Music").GetComponent<AudioSource>();
 		background = GameObject.Find("star background");
+		centers = new Vector2[0];
 
 		star_array = new GameObject[MAX_PADDLES+2];
 		star_assignments = new Vector3[MAX_PADDLES+2];
@@ -100,6 +112,9 @@ public class ShowControl : MonoBehaviour {
 		firework_colors = new Color[MAX_PADDLES + 2];
 		for (int ci = 0; ci < firework_colors.Length; ci++)
 			firework_colors [ci] = Color.HSVToRGB (Random.Range (0f, 1f), Random.Range (.75f, 1f), 1f);
+
+		torches = new GameObject[MAX_PADDLES + 1];
+		frames_since_seen = new int[MAX_PADDLES + 1];
 
 		StartPhase (phase);
 
@@ -266,6 +281,7 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "fireworks shapes":
+			#region
 			HashSet<int> next_hash_fs = new HashSet<int> ();
 			foreach (Blob p in paddles) {
 				if (!seen_in_last_frame.Contains (p.id)) {
@@ -282,10 +298,53 @@ public class ShowControl : MonoBehaviour {
 				f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, Input.mousePosition / SCREEN_SCALEDOWN, firework_colors [Random.Range (0, MAX_PADDLES)], chooseSpecialFirework ());
 			}
 			break;
+			#endregion
 
 		case "great torch":
-			if (num_total_paddles != -1)
-				slider.GetComponent<Slider>().value = paddles.Count / num_total_paddles;
+			if (centers.Length != 0)
+				slider.GetComponent<Slider>().value = paddles.Count / centers.Length;
+			break;
+
+		case "torches":
+			if (!disrupt_normal_torches) {
+				HashSet<int> seen_this_frame = new HashSet<int> ();
+				foreach (Blob p in paddles) {
+					if (!seen_in_last_frame.Contains (p.id)) {
+						torches [p.id].GetComponent<ParticleSystem> ().Play ();
+						torches [p.id].GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+					}
+					torches [p.id].transform.position = p.getCenter () / SCREEN_SCALEDOWN;
+					seen_this_frame.Add (p.id);
+					frames_since_seen [p.id] = 0;
+				}
+				seen_in_last_frame = seen_this_frame;
+				for (int fs = 0; fs < frames_since_seen.Length; fs++) {
+					if (frames_since_seen [fs] > absence_tolerance) {
+						torches [fs].GetComponent<ParticleSystem> ().Stop ();
+						torches [fs].GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+
+					}
+					frames_since_seen [fs]++;
+				}
+			}
+
+			//TEST
+			if (Input.GetMouseButton (0)) {
+				if (!mouse_held_last_frame) {
+					mouse_torch.GetComponent<ParticleSystem> ().Play ();
+					mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+				}
+				mouse_torch.transform.position = Input.mousePosition / SCREEN_SCALEDOWN;
+				mouse_held_last_frame = true;
+				frames_since_mouse_seen = 0;
+			} else {
+				mouse_held_last_frame = false;
+			}
+			if (frames_since_mouse_seen > absence_tolerance) {
+				mouse_torch.GetComponent<ParticleSystem> ().Stop ();
+				mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+			}
+			frames_since_mouse_seen++;
 			break;
 		}
 	}
@@ -429,15 +488,37 @@ public class ShowControl : MonoBehaviour {
 
 		case "fireworks shapes":
 			music.time = 447.702f;
-			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
 			StartCoroutine(EndTimer(472.672f - music.time, "fireworks shapes"));
 			break;
 
 		case "great torch":
 			music.time = 472.672f;
-			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 0f);
-			Instantiate (great_torch_prefab);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
+			great_torch = (GameObject) Instantiate (great_torch_prefab);
 			torch_UI.SetActive (true);
+			StartCoroutine(EndTimer(503.498f - music.time, "great torch"));
+			break;
+
+		case "torches":
+			music.time = 503.498f;
+			seen_in_last_frame.Clear ();
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
+			//The torches array holds a torch object for every paddle.
+			//Whenever the paddle is present, ShowBusiness plays the Particle
+			//System and the torch is kept locked to the location of the paddle.
+			for (int tt = 0; tt < torches.Length; tt++) {
+				if (centers.Length != 0)
+					torches [tt] = (GameObject)Instantiate (indiv_torch_prefab, centers [tt] / SCREEN_SCALEDOWN, Quaternion.identity);
+				else
+					torches [tt] = (GameObject)Instantiate (indiv_torch_prefab, Random.insideUnitCircle * 40f + (Vector2)transform.position, Quaternion.identity);
+			}
+			//TEST
+			mouse_torch = (GameObject)Instantiate (indiv_torch_prefab);
+			mouse_torch.name = "mouse torch";
+
+			StartCoroutine (torchesBackground ());
+			StartCoroutine (FlickerTorches ());
 			break;
 		}
 			
@@ -501,6 +582,12 @@ public class ShowControl : MonoBehaviour {
 
 		case "fireworks shapes":
 			StartPhase ("great torch");
+			break;
+
+		case "great torch":
+			torch_UI.SetActive (false);
+			Destroy (great_torch);
+			StartPhase ("torches");
 			break;
 		}
 			
@@ -628,8 +715,94 @@ public class ShowControl : MonoBehaviour {
 			return circle_firework_prefab;
 	}
 
-	public void setTotalPaddleNumber(int x){
-		num_total_paddles = x;
+	public void RecordCenters(Dictionary<Vector2, int> locations_and_ids){
+		centers = new Vector2[locations_and_ids.Count];
+		foreach (Vector2 v in locations_and_ids.Keys) {
+			centers [locations_and_ids [v]] = v;
+		}
+	}
+
+	IEnumerator FlickerTorches(){
+		disrupt_normal_torches = true;
+		List<GameObject> torches_on = new List<GameObject> ();
+		//left half
+		yield return new WaitForSeconds(527.983f - music.time);
+		foreach (GameObject t in torches) {
+			if (t.transform.position.x < transform.position.x) {
+				t.GetComponent<ParticleSystem> ().Play ();
+				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+				StartCoroutine(TorchOffTimer(528.500f - music.time, t));
+			}
+		}
+		//right half
+		yield return new WaitForSeconds(528.908f - music.time);
+		foreach (GameObject t in torches) {
+			if (t.transform.position.x > transform.position.x) {
+				t.GetComponent<ParticleSystem> ().Play ();
+				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+				StartCoroutine(TorchOffTimer(529.373f - music.time, t));
+			}
+		}
+		//center
+		yield return new WaitForSeconds(529.778f - music.time);
+		foreach (GameObject t in torches) {
+			if (Vector2.Distance(t.transform.position, transform.position) < 20f) {
+				t.GetComponent<ParticleSystem> ().Play ();
+				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+				StartCoroutine(TorchOffTimer(530.241f - music.time, t));
+			}
+		}
+		//random hits
+		yield return new WaitForSeconds (530.611f - music.time); //8 min 50 sec .611 
+		burstRandomTorch ();
+		yield return new WaitForSeconds (530.891f - music.time); //8 min 50 sec .891
+		burstRandomTorch ();
+		yield return new WaitForSeconds (531.201f - music.time); //8 min 51 sec .201
+		burstRandomTorch();
+		yield return new WaitForSeconds (531.461f - music.time); //8 min 51 sec .461
+		burstRandomTorch();
+		yield return new WaitForSeconds (531.631f - music.time); //8 min 51 sec .631
+		burstRandomTorch();
+		yield return new WaitForSeconds (531.781f - music.time); //8 min 51 sec .781
+		burstRandomTorch();
+		yield return new WaitForSeconds (531.901f - music.time); //8 min 51 sec .901
+		burstRandomTorch();
+		yield return new WaitForSeconds (532f - music.time);     //8 min 52 sec .000
+		burstRandomTorch();
+		yield return new WaitForSeconds (532.041f - music.time); //8 min 52 sec .041
+		burstRandomTorch();
+		yield return new WaitForSeconds (532.301f - music.time); //8 min 52 sec .301
+		burstRandomTorch();
+
+		//set back to free roam mode
+		yield return new WaitForSeconds(532.421f - music.time);
+		disrupt_normal_torches = false;
+	}
+
+	IEnumerator TorchOffTimer(float wait_seconds, GameObject t){
+		yield return new WaitForSeconds (wait_seconds);
+		t.GetComponent<ParticleSystem> ().Stop ();
+		t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+	}
+
+	IEnumerator TorchOffTimer(GameObject t){
+		yield return new WaitForSeconds (.3f);
+		t.GetComponent<ParticleSystem> ().Stop ();
+		t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+	}
+
+	void burstRandomTorch(){
+		GameObject random_torch = torches[Random.Range(0, torches.Length)]; 
+		random_torch.GetComponent<ParticleSystem> ().Play ();
+		random_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+		StartCoroutine(TorchOffTimer(random_torch));
+	}
+
+	IEnumerator torchesBackground(){
+		yield return new WaitForSeconds (514.615f - music.time);
+		background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 5f); 
+		yield return new WaitForSeconds (520.894f - music.time);
+		background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 1f); 
 	}
 
 	/*Schedule:
