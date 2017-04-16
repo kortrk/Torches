@@ -59,10 +59,10 @@ public class CameraFeed : MonoBehaviour {
 	public int WIDTH = 1280;
 	public int HEIGHT = 720;
 	public float SCREEN_SCALEDOWN = 10f;//Unity struggles with large coordinates
-	int TOP_PADDLE_Y = 650; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 344; //        "       bottom paddle
-	int TOP_PADDLE_H = 32;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_H = 96; //paddle size with row in lecture hall
+	int TOP_PADDLE_Y = 570; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 240; //        "       bottom paddle
+	int TOP_PADDLE_H = 20;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_H = 100; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -138,7 +138,7 @@ public class CameraFeed : MonoBehaviour {
 		//mouseColorTest();
 		//drawDistance();
 
-		if (Input.GetKeyDown (KeyCode.R) || Input.GetMouseButtonDown(1)) {
+		if ((Input.GetKeyDown (KeyCode.R) || Input.GetMouseButtonDown(1)) && !sc.phase_input.isFocused) {
 			assignIDs ();
 			sc.RecordCenters(locations_and_ids);
 			print ("IDs assigned for " + locations_and_ids.Count+" paddle centers");
@@ -370,5 +370,14 @@ public class CameraFeed : MonoBehaviour {
 		55.25 inches off the top of the table at the 
 		front of the room. 7 feet in height total.
 	*/
+
+		/*
+		4/13 Darken shapes background. I can't see my shape fly
+		into place over the camera feed.
+		--done RPI logo should stick around for a while..--
+		Make heart effect repeatable? Ask the playtesters about this.
+		DONE?? Kill those lingering stars!!
+		Take glow's perlin noise and mimic it in the illumination
+		*/
 
 }

@@ -20,6 +20,7 @@ public class ShowControl : MonoBehaviour {
 	public GameObject paddle_center_prefab;
 	GameObject background;
 	Vector2[] centers;
+	public InputField phase_input;
 
 	//SPECIFIC PHASE VARIABLES
 
@@ -85,6 +86,11 @@ public class ShowControl : MonoBehaviour {
 	GameObject mouse_torch;
 	int frames_since_mouse_seen = 0;
 	bool disrupt_normal_torches = false;
+	 //illuminating torches
+	bool illuminate = false;
+	public GameObject dark_parent_prefab;
+	GameObject darkness_parent; 
+	float glow_radius = 10f;
 
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
@@ -118,6 +124,12 @@ public class ShowControl : MonoBehaviour {
 
 		StartPhase (phase);
 
+	}
+
+	void Update(){
+		if (Input.GetKeyDown (KeyCode.Alpha1)) {
+			phase_input.gameObject.SetActive (!phase_input.gameObject.activeSelf);
+		}
 	}
 
 	//ShowBusiness is the "Update" function of 
@@ -239,7 +251,7 @@ public class ShowControl : MonoBehaviour {
 				if (!seen_in_last_frame.Contains (b.id)) {
 					//this paddle appeared this frame - it
 					//gets to sling some paint! 
-					Instantiate (paint_splat, b.getCenter (), Quaternion.identity);
+					Instantiate (paint_splat, b.getCenter ()/SCREEN_SCALEDOWN, Quaternion.identity);
 				}
 				next_hash.Add (b.id);
 			}
@@ -258,7 +270,7 @@ public class ShowControl : MonoBehaviour {
 			foreach (Blob p in paddles) {
 				if (!seen_in_last_frame.Contains (p.id)) {
 					if (store) {
-						stored_bursts.Add (p.id, p.getCenter ());
+						if (!stored_bursts.ContainsKey(p.id)) stored_bursts.Add (p.id, p.getCenter ());
 					} else {
 						GameObject f = (GameObject)Instantiate (firework_ball_prefab);
 						f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], basic_burst_prefab);
@@ -307,6 +319,16 @@ public class ShowControl : MonoBehaviour {
 
 		case "torches":
 			if (!disrupt_normal_torches) {
+
+				if (illuminate) {
+					//turn all the spots dark - we'll check if they are illuminated paddle by paddle
+					foreach (darknessBehavior dark_spot in GameObject.FindObjectsOfType<darknessBehavior>()) {
+						dark_spot.checkAround (torches);
+						//TEST
+						dark_spot.checkAround (new GameObject[1]{ mouse_torch });
+					}
+				}
+
 				HashSet<int> seen_this_frame = new HashSet<int> ();
 				foreach (Blob p in paddles) {
 					if (!seen_in_last_frame.Contains (p.id)) {
@@ -329,22 +351,25 @@ public class ShowControl : MonoBehaviour {
 			}
 
 			//TEST
-			if (Input.GetMouseButton (0)) {
-				if (!mouse_held_last_frame) {
-					mouse_torch.GetComponent<ParticleSystem> ().Play ();
-					mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+			if (!disrupt_normal_torches) {
+
+				if (Input.GetMouseButton (0)) {
+					if (!mouse_held_last_frame) {
+						mouse_torch.GetComponent<ParticleSystem> ().Play ();
+						mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
+					}
+					mouse_torch.transform.position = Input.mousePosition / SCREEN_SCALEDOWN;
+					mouse_held_last_frame = true;
+					frames_since_mouse_seen = 0;
+				} else {
+					mouse_held_last_frame = false;
 				}
-				mouse_torch.transform.position = Input.mousePosition / SCREEN_SCALEDOWN;
-				mouse_held_last_frame = true;
-				frames_since_mouse_seen = 0;
-			} else {
-				mouse_held_last_frame = false;
-			}
-			if (frames_since_mouse_seen > absence_tolerance) {
-				mouse_torch.GetComponent<ParticleSystem> ().Stop ();
-				mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
-			}
-			frames_since_mouse_seen++;
+				if (frames_since_mouse_seen > absence_tolerance) {
+					mouse_torch.GetComponent<ParticleSystem> ().Stop ();
+					mouse_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+				}
+				frames_since_mouse_seen++;
+			} 
 			break;
 		}
 	}
@@ -360,7 +385,7 @@ public class ShowControl : MonoBehaviour {
 		case "intro":
 			#region
 			music.time = 0;
-			StartCoroutine(EndTimer (19.309f - music.time, "intro"));
+			StartCoroutine(EndTimer (19.309f - music.time, "intro", "stars"));
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, 0f, 0f);
 			break;
 			#endregion
@@ -407,7 +432,7 @@ public class ShowControl : MonoBehaviour {
 			}
 
 			//set when the next phase starts
-			StartCoroutine(EndTimer(71.971f - music.time, "stars twinkling"));
+			StartCoroutine(EndTimer(71.971f - music.time, "stars twinkling", "bubbles"));
 			break;
 			#endregion
 		
@@ -416,7 +441,7 @@ public class ShowControl : MonoBehaviour {
 			music.time = 71.971f;
 			//set up to end this phase
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, .5f);
-			StartCoroutine(EndTimer(129.756f - music.time, "bubbles")); 
+			StartCoroutine(EndTimer(129.756f - music.time, "bubbles", "heart")); 
 			//heart starts at 2 min 9 sec 756 millis
 			break;
 			#endregion
@@ -424,13 +449,13 @@ public class ShowControl : MonoBehaviour {
 		case "heart":
 			#region
 			music.time = 129.756f;
-			background.GetComponent<expandBackground>().startSwitchColor(Color.white, .25f, 2f);
+			background.GetComponent<expandBackground>().startSwitchColor(Color.white, .5f, 2f);
 			background.GetComponent<expandBackground>().grow = false;
 			//we allow the heart to start being revealed when the violin comes in
 			//in the soundtrack, at 2 min 23 sec 713 millis
 			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
 			//set up when this ends
-			StartCoroutine (EndTimer(172.546f - music.time, "heart"));
+			StartCoroutine (EndTimer(172.546f - music.time, "heart", "expanding star"));
 			break;
 			#endregion
 
@@ -438,9 +463,9 @@ public class ShowControl : MonoBehaviour {
 			#region
 			music.time = 172.546f;
 			background.GetComponent<expandBackground> ().
-			  startSwitchColor(new Color(0f,0f,75f), .25f, 1.5f);
+			  startSwitchColor(new Color(0f,0f,75f), .5f, 1.5f);
 			//set up when this ends
-			StartCoroutine(EndTimer(204.651f - music.time, "expanding star"));
+			StartCoroutine(EndTimer(204.651f - music.time, "expanding star", "RPI"));
 			break;
 			#endregion
 
@@ -451,13 +476,14 @@ public class ShowControl : MonoBehaviour {
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
 			StartCoroutine (BackgroundToRed (259.913f - music.time, background));
 			//set up when this ends
-			StartCoroutine(EndTimer(273.269f - music.time, "RPI"));
+			StartCoroutine(EndTimer(273.269f - music.time, "RPI", "second intro"));
 			break;
 			#endregion
 
 		case "second intro":
 			music.time = 273.269f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .25f, 16f);
+			StartCoroutine(EndTimer(286f - music.time, "second intro", "fireworks"));
 			break;
 
 		case "fireworks":
@@ -482,14 +508,14 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (launchStorePercentage (439.993f - music.time, basic_burst_prefab));
 			StartCoroutine (clearStoredBursts (441.000f - music.time));
 			StartCoroutine (fireworkSparkle (443.567f - music.time, 3.35f));
-			StartCoroutine (EndTimer (447.702f - music.time, "fireworks"));
+			StartCoroutine (EndTimer (447.702f - music.time, "fireworks", "fireworks shapes"));
 			break;
 			#endregion
 
 		case "fireworks shapes":
 			music.time = 447.702f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
-			StartCoroutine(EndTimer(472.672f - music.time, "fireworks shapes"));
+			StartCoroutine(EndTimer(472.672f - music.time, "fireworks shapes", "great torch"));
 			break;
 
 		case "great torch":
@@ -497,7 +523,7 @@ public class ShowControl : MonoBehaviour {
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
 			great_torch = (GameObject) Instantiate (great_torch_prefab);
 			torch_UI.SetActive (true);
-			StartCoroutine(EndTimer(503.498f - music.time, "great torch"));
+			StartCoroutine(EndTimer(503.498f - music.time, "great torch", "torches"));
 			break;
 
 		case "torches":
@@ -508,9 +534,10 @@ public class ShowControl : MonoBehaviour {
 			//Whenever the paddle is present, ShowBusiness plays the Particle
 			//System and the torch is kept locked to the location of the paddle.
 			for (int tt = 0; tt < torches.Length; tt++) {
-				if (centers.Length != 0)
-					torches [tt] = (GameObject)Instantiate (indiv_torch_prefab, centers [tt] / SCREEN_SCALEDOWN, Quaternion.identity);
-				else
+				if (centers.Length != 0) { //if we're using paddles + ids
+					if (centers.Length > tt) //if there's a paddle for this
+						torches [tt] = (GameObject)Instantiate (indiv_torch_prefab, centers [tt] / SCREEN_SCALEDOWN, Quaternion.identity);
+				} else
 					torches [tt] = (GameObject)Instantiate (indiv_torch_prefab, Random.insideUnitCircle * 40f + (Vector2)transform.position, Quaternion.identity);
 			}
 			//TEST
@@ -525,11 +552,11 @@ public class ShowControl : MonoBehaviour {
 	}
 
 	//cleans up phase objects and starts the next
-	void EndPhase(string old_phase){
+	void EndPhase(string old_phase, string next){
 		switch (old_phase) {
 
 		case "intro":
-			StartPhase ("stars");
+			StartPhase (next);//stars
 			break;
 
 		case "stars":
@@ -537,81 +564,100 @@ public class ShowControl : MonoBehaviour {
 				destroy_stars_container = true;
 				Destroy (GameObject.Find ("Stars"));
 			}
+			foreach (GameObject star in GameObject.FindGameObjectsWithTag("star")) {
+				Destroy (star);
+			}
 
-			StartPhase ("stars twinkling");
+			StartPhase (next);//stars twinkling
 			break;
 
 		case "stars twinkling":
 			star_array = new GameObject[0];
-			StartPhase ("bubbles");
+			foreach (GameObject star in GameObject.FindGameObjectsWithTag("star")) {
+				Destroy (star);
+			}
+			StartPhase (next);//bubbles
 			break;
 		
 		case "bubbles":
 			bubbleBehavior[] bubbles_left = GameObject.FindObjectsOfType<bubbleBehavior> ();
 			foreach (bubbleBehavior b in bubbles_left)
 				b.Pop ();
-			StartPhase ("heart");
+			StartPhase (next);//heart
 			break;
 
 		case "heart":
 			expandingShape[] hearts = GameObject.FindObjectsOfType<expandingShape> ();
 			foreach (expandingShape e in hearts)
 				Destroy (e.gameObject);
-			StartPhase ("expanding star");
+			StartPhase (next);//expanding star
 			break;
 
 		case "expanding star":
 			expandingShape[] stars = GameObject.FindObjectsOfType<expandingShape> ();
 			foreach (expandingShape e in stars)
 				Destroy (e.gameObject);
-			StartPhase ("RPI");
+			StartPhase (next);//RPI
 			break;
 
 		case "RPI":
 			paintSplatBehavior[] splats = GameObject.FindObjectsOfType<paintSplatBehavior> ();
 			foreach (paintSplatBehavior p in splats)
 				Destroy (p.gameObject);
-			Destroy (GameObject.FindObjectOfType<rpiLogoBehavior> ().gameObject);
-			StartPhase ("second intro");
+			GameObject.FindObjectOfType<rpiLogoBehavior> ().fadeOut();
+			StartPhase (next);//second intro
+			break;
+
+		case "second intro":
+			StartPhase (next);
 			break;
 
 		case "fireworks": 
 			stored_bursts.Clear ();
-			StartPhase ("fireworks shapes");
+			StartPhase (next);//"fireworks shapes"
 			break;
 
 		case "fireworks shapes":
-			StartPhase ("great torch");
+			StartPhase (next);//"great torch"
 			break;
 
 		case "great torch":
 			torch_UI.SetActive (false);
 			Destroy (great_torch);
-			StartPhase ("torches");
+			StartPhase (next);//"torches"
 			break;
 		}
 			
 	}
 
 	IEnumerator StarTimer(float first_stop, float second_stop, float third_stop, float last_stop, float music_restart_time){
+		bool phase_changed = false;
 		//there are a couple of places where we might start the twinkling phase
 		yield return new WaitForSeconds(first_stop);
 		print ("stop 1");
-		if (positions_recorded)
-			EndPhase ("stars");
+		if (positions_recorded && !phase_changed) {
+			EndPhase ("stars", "stars twinkling");
+			phase_changed = true;
+		}
 		yield return new WaitForSeconds (second_stop - first_stop);
 		print ("stop 2");
-		if (positions_recorded)
-			EndPhase ("stars");
+		if (positions_recorded && !phase_changed) {
+			EndPhase ("stars", "stars twinkling");
+			phase_changed = true;
+		}
 		yield return new WaitForSeconds (third_stop - (second_stop + first_stop));
 		print ("stop 3");
-		if (positions_recorded)
-			EndPhase ("stars");
+		if (positions_recorded && !phase_changed) {
+			EndPhase ("stars", "stars twinkling");
+			phase_changed = true;
+		}
 		yield return new WaitForSeconds (last_stop - (third_stop + second_stop + first_stop));
 		print ("last stop");
-		if (positions_recorded)
-			EndPhase ("stars");
-		else {
+		if (positions_recorded && !phase_changed) {
+			EndPhase ("stars", "stars twinkling");
+			phase_changed = true;
+		}
+		else if (!positions_recorded){
 			//if we got here without being told we can end,
 			//we need to loop back in the music and try again
 			music.time = music_restart_time;
@@ -619,9 +665,9 @@ public class ShowControl : MonoBehaviour {
 		}
 	}
 
-	IEnumerator EndTimer(float seconds_to_wait, string phase_to_end){
+	IEnumerator EndTimer(float seconds_to_wait, string phase_to_end, string next_phase){
 		yield return new WaitForSeconds (seconds_to_wait);
-		EndPhase (phase_to_end);
+		EndPhase (phase_to_end, next_phase);
 	}
 
 	IEnumerator waitAndActivateHeart(float wait_seconds){
@@ -723,15 +769,19 @@ public class ShowControl : MonoBehaviour {
 	}
 
 	IEnumerator FlickerTorches(){
-		disrupt_normal_torches = true;
 		List<GameObject> torches_on = new List<GameObject> ();
 		//left half
 		yield return new WaitForSeconds(527.983f - music.time);
+		disrupt_normal_torches = true;
+		mouse_torch.GetComponent<ParticleSystem> ().Stop ();//TEST
 		foreach (GameObject t in torches) {
 			if (t.transform.position.x < transform.position.x) {
 				t.GetComponent<ParticleSystem> ().Play ();
 				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
-				StartCoroutine(TorchOffTimer(528.500f - music.time, t));
+				StartCoroutine (TorchOffTimer (528.500f - music.time, t));
+			} else {
+				t.GetComponent<ParticleSystem> ().Stop ();
+				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
 			}
 		}
 		//right half
@@ -802,7 +852,14 @@ public class ShowControl : MonoBehaviour {
 		yield return new WaitForSeconds (514.615f - music.time);
 		background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 5f); 
 		yield return new WaitForSeconds (520.894f - music.time);
-		background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 1f); 
+		background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .2f, 1f); 
+		Instantiate (dark_parent_prefab);
+		illuminate = true;
+	}
+
+	public void PhaseJump(){
+		StopAllCoroutines ();
+		EndPhase (phase, phase_input.text);
 	}
 
 	/*Schedule:
