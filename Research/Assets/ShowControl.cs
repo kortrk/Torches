@@ -81,7 +81,7 @@ public class ShowControl : MonoBehaviour {
 	GameObject[] torches;
 	public GameObject indiv_torch_prefab;
 	int[] frames_since_seen;
-	int absence_tolerance = 5; //how long we'll keep a torch around if its paddle disappears
+	int absence_tolerance = 15; //how long we'll keep a torch around if its paddle disappears
 	bool mouse_held_last_frame = false;
 	GameObject mouse_torch;
 	int frames_since_mouse_seen = 0;
@@ -90,7 +90,26 @@ public class ShowControl : MonoBehaviour {
 	bool illuminate = false;
 	public GameObject dark_parent_prefab;
 	GameObject darkness_parent; 
-	float glow_radius = 10f;
+
+	//"network"
+	GameObject[] dots;
+	public GameObject dot_prefab;
+	public GameObject dot_particle_prefab;
+	bool placing_dots = true;
+	bool connecting = false;
+	List<List<Edge> > edge_lists;
+	float connection_radius = 30f;
+	float connection_start_time = 0f;
+	float connection_time = 574.787f; //when is the network completed?
+	public GameObject connecting_particles;
+	public GameObject twinkling_line_prefab;
+	public GameObject dot_sparkle_prefab;
+
+	//"globes"
+	public Sprite network_picture;
+	public GameObject sphere_prefab;
+	public Camera network_camera;
+
 
 	void Start () {
 		print (GetComponent<MeshRenderer> ().bounds.size.x);
@@ -121,6 +140,12 @@ public class ShowControl : MonoBehaviour {
 
 		torches = new GameObject[MAX_PADDLES + 1];
 		frames_since_seen = new int[MAX_PADDLES + 1];
+
+		dots = new GameObject[MAX_PADDLES + 1];
+		edge_lists = new List<List<Edge>> ();
+		for (int x = 0; x < MAX_PADDLES + 1; x++) {
+			edge_lists.Add (new List<Edge> ());
+		}
 
 		StartPhase (phase);
 
@@ -313,11 +338,14 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "great torch":
-			if (centers.Length != 0)
-				slider.GetComponent<Slider>().value = paddles.Count / centers.Length;
+			if (centers.Length != 0) {
+				slider.GetComponent<Slider> ().value = (float) paddles.Count / centers.Length;
+			}
+			
 			break;
 
 		case "torches":
+			#region
 			if (!disrupt_normal_torches) {
 
 				if (illuminate) {
@@ -340,7 +368,7 @@ public class ShowControl : MonoBehaviour {
 					frames_since_seen [p.id] = 0;
 				}
 				seen_in_last_frame = seen_this_frame;
-				for (int fs = 0; fs < frames_since_seen.Length; fs++) {
+				for (int fs = 0; fs < centers.Length; fs++) {
 					if (frames_since_seen [fs] > absence_tolerance) {
 						torches [fs].GetComponent<ParticleSystem> ().Stop ();
 						torches [fs].GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
@@ -371,6 +399,47 @@ public class ShowControl : MonoBehaviour {
 				frames_since_mouse_seen++;
 			} 
 			break;
+			#endregion
+
+		case "network":
+			#region
+			foreach (Blob p in paddles) {
+				if (placing_dots) {
+					if (dots [p.id] == null) {
+						dots [p.id] = (GameObject)Instantiate (dot_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+						dots[p.id].GetComponent<dotBehavior>().startUp(.5f,firework_colors [p.id]);
+						GameObject particles = (GameObject)Instantiate (dot_particle_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
+						ParticleSystem.MainModule settings = particles.GetComponent<ParticleSystem> ().main;
+						settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors [p.id]);
+					}
+				}
+			}
+
+			if (connecting){
+				float connection_percentage = (music.time - connection_start_time) / (connection_time - connection_start_time);
+				print(connection_start_time+", "+connection_time);
+				print(connection_percentage+"%");
+				foreach (List<Edge> edges in edge_lists){
+					foreach (Edge edge in edges){
+						//pairs consist of a starter, a dest, and a particle system
+						edge.ps.transform.position = Vector3.Lerp(edge.start.transform.position, edge.end.transform.position, connection_percentage);
+					}
+				}
+				if (connection_percentage >= 1f) connecting = false;
+			}
+
+			//TEST
+			if (Input.GetMouseButtonDown(0)){
+				int random_id = Random.Range(0, MAX_PADDLES);
+				dots[random_id] = (GameObject) Instantiate (dot_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
+				dots[random_id].GetComponent<dotBehavior>().startUp(.5f, Color.cyan);//firework_colors [random_id]);
+				GameObject particles = (GameObject)Instantiate (dot_particle_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
+				ParticleSystem.MainModule settings = particles.GetComponent<ParticleSystem> ().main;
+				settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors [random_id]);
+			}
+
+			break;
+			#endregion
 		}
 	}
 
@@ -474,7 +543,7 @@ public class ShowControl : MonoBehaviour {
 			music.time = 204.651f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 1.5f);
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
-			StartCoroutine (BackgroundToRed (259.913f - music.time, background));
+			StartCoroutine (DelayBackgroundChange (259.913f - music.time, Color.red, 1f, 3f));
 			//set up when this ends
 			StartCoroutine(EndTimer(273.269f - music.time, "RPI", "second intro"));
 			break;
@@ -513,21 +582,27 @@ public class ShowControl : MonoBehaviour {
 			#endregion
 
 		case "fireworks shapes":
+			#region
 			music.time = 447.702f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
 			StartCoroutine(EndTimer(472.672f - music.time, "fireworks shapes", "great torch"));
 			break;
+			#endregion
 
 		case "great torch":
+			#region
 			music.time = 472.672f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
 			great_torch = (GameObject) Instantiate (great_torch_prefab);
 			torch_UI.SetActive (true);
 			StartCoroutine(EndTimer(503.498f - music.time, "great torch", "torches"));
 			break;
+			#endregion
 
 		case "torches":
+			#region
 			music.time = 503.498f;
+			StartCoroutine(EndTimer(545.200f - music.time, "torches", "network"));
 			seen_in_last_frame.Clear ();
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
 			//The torches array holds a torch object for every paddle.
@@ -546,6 +621,16 @@ public class ShowControl : MonoBehaviour {
 
 			StartCoroutine (torchesBackground ());
 			StartCoroutine (FlickerTorches ());
+			break;
+			#endregion
+
+		case "network":
+			music.time = 545.200f;
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
+			StartCoroutine (StartNodeConnection (555.419f - music.time));
+			StartCoroutine (TwinkleNetwork (562.449f - music.time, 3.590f));
+			StartCoroutine(DelayBackgroundChange(574.665f - music.time, Color.black, 1f, 2f));
+			StartCoroutine (EndTimer (580.833f - music.time, "network", "globe"));
 			break;
 		}
 			
@@ -626,6 +711,25 @@ public class ShowControl : MonoBehaviour {
 			Destroy (great_torch);
 			StartPhase (next);//"torches"
 			break;
+
+		case "torches":
+			Destroy (GameObject.FindObjectOfType<makeSpaceDark> ().gameObject);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 0f);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 2.5f);
+			foreach (GameObject t in torches)
+				Destroy (t);
+			Destroy (mouse_torch);
+			StartPhase (next); //"network"
+			break;
+
+		case "network":
+			//take screenshot
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, 4f);
+			StartCoroutine (FreezeCam ());
+			Instantiate (sphere_prefab);
+			//wait, then destroy the other objects
+			StartCoroutine(waitThenDestroyNetwork());
+			break;
 		}
 			
 	}
@@ -677,9 +781,9 @@ public class ShowControl : MonoBehaviour {
 		shape_color_bursts_active = true;
 	}
 
-	IEnumerator BackgroundToRed(float wait_seconds, GameObject background){
+	IEnumerator DelayBackgroundChange(float wait_seconds, Color new_color, float transparency, float change_time){
 		yield return new WaitForSeconds (wait_seconds);
-		background.GetComponent<expandBackground> ().startSwitchColor (Color.red, 1f, 3f);
+		background.GetComponent<expandBackground> ().startSwitchColor (new_color, transparency/*1f*/, change_time/*3f*/);
 	}
 
 	IEnumerator fireworksDoStore(float wait_seconds, bool store_val){
@@ -773,8 +877,15 @@ public class ShowControl : MonoBehaviour {
 		//left half
 		yield return new WaitForSeconds(527.983f - music.time);
 		disrupt_normal_torches = true;
+		foreach (GameObject t in torches) {
+			if (t != null) {
+				t.GetComponent<ParticleSystem> ().Stop ();
+				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = false;
+			}
+		}
 		mouse_torch.GetComponent<ParticleSystem> ().Stop ();//TEST
 		foreach (GameObject t in torches) {
+			if (t == null) continue;
 			if (t.transform.position.x < transform.position.x) {
 				t.GetComponent<ParticleSystem> ().Play ();
 				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
@@ -787,6 +898,7 @@ public class ShowControl : MonoBehaviour {
 		//right half
 		yield return new WaitForSeconds(528.908f - music.time);
 		foreach (GameObject t in torches) {
+			if (t == null) continue;
 			if (t.transform.position.x > transform.position.x) {
 				t.GetComponent<ParticleSystem> ().Play ();
 				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
@@ -796,6 +908,7 @@ public class ShowControl : MonoBehaviour {
 		//center
 		yield return new WaitForSeconds(529.778f - music.time);
 		foreach (GameObject t in torches) {
+			if (t == null) continue;
 			if (Vector2.Distance(t.transform.position, transform.position) < 20f) {
 				t.GetComponent<ParticleSystem> ().Play ();
 				t.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
@@ -842,7 +955,7 @@ public class ShowControl : MonoBehaviour {
 	}
 
 	void burstRandomTorch(){
-		GameObject random_torch = torches[Random.Range(0, torches.Length)]; 
+		GameObject random_torch = torches[Random.Range(0, centers.Length)]; 
 		random_torch.GetComponent<ParticleSystem> ().Play ();
 		random_torch.GetComponentInChildren<torchGlowBehavior> ().gameObject.GetComponent<SpriteRenderer> ().enabled = true;
 		StartCoroutine(TorchOffTimer(random_torch));
@@ -860,6 +973,129 @@ public class ShowControl : MonoBehaviour {
 	public void PhaseJump(){
 		StopAllCoroutines ();
 		EndPhase (phase, phase_input.text);
+	}
+
+	IEnumerator StartNodeConnection(float wait_seconds){
+		yield return new WaitForSeconds (wait_seconds);
+
+		//place all the dots that haven't been placed
+		if (centers.Length != 0) {//non test case
+			for (int center_index = 0; center_index < centers.Length; center_index++) {
+				if (dots [center_index] == null) {
+					dots [center_index] = (GameObject)Instantiate (dot_prefab, centers [center_index] / SCREEN_SCALEDOWN, Quaternion.identity);
+					dots [center_index].GetComponent<dotBehavior> ().startUp (.5f, Color.cyan);//firework_colors [center_index]);
+					GameObject particles = (GameObject)Instantiate (dot_particle_prefab, centers [center_index] / SCREEN_SCALEDOWN, Quaternion.identity);
+					ParticleSystem.MainModule settings = particles.GetComponent<ParticleSystem> ().main;
+					settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors [center_index]);
+				}
+			}
+		}/*
+		else { //TEST
+			for (int c = 0; c < dots.Length; c++) {
+				if (dots [c] == null) {
+					Vector2 random_loc = new Vector2 (Random.Range (0, 128), Random.Range (0, 72));
+					dots [c] = (GameObject)Instantiate (dot_prefab, random_loc, Quaternion.identity);
+					dots [c].GetComponent<dotBehavior> ().startUp (.5f, Color.cyan);//firework_colors [c]);
+					GameObject particles = (GameObject)Instantiate (dot_particle_prefab, random_loc, Quaternion.identity);
+					ParticleSystem.MainModule settings = particles.GetComponent<ParticleSystem> ().main;
+					settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors [c]);
+				}
+			}
+		}*/
+
+		//now choose which connections will happen
+		int centers_length = centers.Length;
+		if (centers.Length == 0)
+			centers_length = MAX_PADDLES;
+		for (int i = 0; i < dots.Length; i++) {
+			for (int j = 0; j < dots.Length; j++) {
+				//we only make a connection FROM lower id TO higher id when the dots are close enough
+				if (i < j && i < centers_length && j < centers_length && dots[i] != null && dots[j] != null &&
+					Vector2.Distance (dots [i].transform.position, dots [j].transform.position) < connection_radius) {
+					//edge_lists is a List of Lists of edge object, one list of edges for each point
+					GameObject ps = (GameObject) Instantiate(connecting_particles, dots[i].transform.position, Quaternion.identity);
+					Edge edge = new Edge (dots[i], dots[j], ps);
+					edge_lists [i].Add (edge);
+				}
+			}
+		}
+		placing_dots = false;
+		connecting = true;
+		connection_start_time = music.time;
+	}
+
+	class Edge{
+		public GameObject start;
+		public GameObject end;
+		public GameObject ps;
+
+		public Edge (GameObject s, GameObject e, GameObject p){
+			start = s;
+			end = e;
+			ps = p;
+		}
+	}
+
+	IEnumerator TwinkleNetwork(float wait_seconds, float duration){
+		List<GameObject> twinkling_lines = new List<GameObject>();
+
+		yield return new WaitForSeconds (wait_seconds);
+		GameObject[] lines = GameObject.FindGameObjectsWithTag ("line particles");
+		foreach (GameObject line in lines) {
+			line.GetComponent<ParticleSystemRenderer>().enabled = false;
+		}
+		foreach (List<Edge> edges in edge_lists) {
+			foreach (Edge e in edges) {
+				Vector2 position = new Vector2 ((e.start.transform.position.x + e.end.transform.position.x) * .5f, 
+					                   (e.start.transform.position.y + e.end.transform.position.y) * .5f);
+				float length = Vector2.Distance (e.start.transform.position, e.end.transform.position);
+				float rotation = Vector2.Angle (e.start.transform.position, e.end.transform.position);
+				GameObject particles = (GameObject)Instantiate (twinkling_line_prefab, position, Quaternion.identity);
+				particles.transform.localRotation = Quaternion.Euler (0f, 0f, Random.Range(0,360));
+				ParticleSystem.ShapeModule settings = particles.GetComponent<ParticleSystem> ().shape;
+				settings.radius = length;
+				twinkling_lines.Add (particles);
+			}
+		}
+		for (int d = 0; d< dots.Length; d++) {
+			if (dots[d] != null) {
+				dots[d].SetActive (false);
+				GameObject ps = Instantiate (dot_sparkle_prefab, dots[d].transform.position, Quaternion.identity);
+				ParticleSystem.MainModule settings = ps.GetComponent<ParticleSystem> ().main;
+				settings.duration = duration;
+				settings.startColor = firework_colors [d];
+			}
+		}
+
+		yield return new WaitForSeconds (duration);
+
+		foreach (GameObject line in twinkling_lines) {
+			Destroy (line);
+		}
+		foreach (GameObject line in lines) {
+			line.GetComponent<ParticleSystemRenderer>().enabled = true;
+		}
+		foreach (GameObject dot in dots) {
+			if (dot != null)
+				dot.SetActive (true);
+		}
+
+		network_camera.enabled = true;
+	}
+
+	IEnumerator FreezeCam()
+	{
+		network_camera.clearFlags = CameraClearFlags.Nothing;
+		yield return null;
+		network_camera.cullingMask = 0;
+	}
+
+	IEnumerator waitThenDestroyNetwork(){
+		yield return new WaitForSeconds (2f);
+		foreach (ParticleSystem p in GameObject.FindObjectsOfType<ParticleSystem>())
+			Destroy (p.gameObject);
+		foreach (dotBehavior dot in GameObject.FindObjectsOfType<dotBehavior>())
+			Destroy (dot.gameObject);
 	}
 
 	/*Schedule:

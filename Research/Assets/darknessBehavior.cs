@@ -31,7 +31,7 @@ public class darknessBehavior : MonoBehaviour {
 		sr.color = new Color (sr.color.r, sr.color.g, sr.color.b, 1f);
 		float shortest_distance = 999999999f;
 		foreach (GameObject torch in torches) {
-			if (torch.GetComponent<ParticleSystem> ().isEmitting) {
+			if (torch != null && torch.GetComponent<ParticleSystem> ().isEmitting) {
 				float distance = Vector3.Distance (torch.transform.position, transform.position);
 				if (distance < glow_radius) {
 					//I am illuminated

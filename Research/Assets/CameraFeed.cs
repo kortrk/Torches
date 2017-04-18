@@ -59,10 +59,10 @@ public class CameraFeed : MonoBehaviour {
 	public int WIDTH = 1280;
 	public int HEIGHT = 720;
 	public float SCREEN_SCALEDOWN = 10f;//Unity struggles with large coordinates
-	int TOP_PADDLE_Y = 570; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 240; //        "       bottom paddle
+	int TOP_PADDLE_Y = 610; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 190; //        "       bottom paddle
 	int TOP_PADDLE_H = 20;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_H = 100; //paddle size with row in lecture hall
+	int BOTTOM_PADDLE_H = 90; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -136,7 +136,7 @@ public class CameraFeed : MonoBehaviour {
 			//print ("Number of green pixels found: " + num_green_found);
 		}
 		//mouseColorTest();
-		//drawDistance();
+		drawDistance();
 
 		if ((Input.GetKeyDown (KeyCode.R) || Input.GetMouseButtonDown(1)) && !sc.phase_input.isFocused) {
 			assignIDs ();
@@ -379,5 +379,21 @@ public class CameraFeed : MonoBehaviour {
 		DONE?? Kill those lingering stars!!
 		Take glow's perlin noise and mimic it in the illumination
 		*/
+
+		/*
+			4/17 Group testing notes
+			More bubbles bigger size range  more speed variation
+			Allow pink hearts and white stars multiple times
+			Signal to put down paddles before hearts
+			Slow down star flight to show spinning better?
+			Dark glow around great torch (better definition on flame) 
+			 and more transparent background
+			Torch ratio for color choice just plain didnt work - related to 
+			 an error on line 365 of ShowControl?
+			Inform audience to tilt paddles back a little
+			Illumination around paddles doesn't work, but around mouse
+			 it does...
+		*/
+
 
 }
