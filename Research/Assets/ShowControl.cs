@@ -106,9 +106,10 @@ public class ShowControl : MonoBehaviour {
 	public GameObject dot_sparkle_prefab;
 
 	//"globes"
-	public Sprite network_picture;
 	public GameObject sphere_prefab;
 	public Camera network_camera;
+	public GameObject globe_quad_prefab;
+	GameObject globe_quad;
 
 
 	void Start () {
@@ -632,6 +633,13 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine(DelayBackgroundChange(574.665f - music.time, Color.black, 1f, 2f));
 			StartCoroutine (EndTimer (580.833f - music.time, "network", "globe"));
 			break;
+
+		case "globe":
+			music.time = 580.833f;
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
+			globe_quad = (GameObject) Instantiate (globe_quad_prefab, transform.position, Quaternion.identity);
+			StartCoroutine (GlobeDisplay (597.761f - music.time));
+			break;
 		}
 			
 	}
@@ -728,7 +736,8 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (FreezeCam ());
 			Instantiate (sphere_prefab);
 			//wait, then destroy the other objects
-			StartCoroutine(waitThenDestroyNetwork());
+			StartCoroutine (waitThenDestroyNetwork ());
+			StartPhase (next);
 			break;
 		}
 			
@@ -1064,6 +1073,7 @@ public class ShowControl : MonoBehaviour {
 				ParticleSystem.MainModule settings = ps.GetComponent<ParticleSystem> ().main;
 				settings.duration = duration;
 				settings.startColor = firework_colors [d];
+				ps.GetComponent<ParticleSystem> ().Play ();
 			}
 		}
 
@@ -1096,6 +1106,12 @@ public class ShowControl : MonoBehaviour {
 			Destroy (p.gameObject);
 		foreach (dotBehavior dot in GameObject.FindObjectsOfType<dotBehavior>())
 			Destroy (dot.gameObject);
+	}
+
+	IEnumerator GlobeDisplay(float wait_seconds){
+		//fade globe quad
+		yield return new WaitForSeconds(wait_seconds);
+		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (.2f);
 	}
 
 	/*Schedule:
