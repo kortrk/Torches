@@ -24,7 +24,7 @@ public class blinkBriefly : MonoBehaviour {
 	IEnumerator blink_coroutine(){
 		GetComponent<SpriteRenderer> ().enabled = true;
 		blink_on = true;
-		yield return new WaitForSeconds (.5f);
+		yield return new WaitForSeconds (.3f);
 		GetComponent<SpriteRenderer> ().enabled = false;
 		blink_on = false;
 	}

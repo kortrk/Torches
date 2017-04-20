@@ -663,10 +663,16 @@ public class ShowControl : MonoBehaviour {
 				finale_stars [fx] = (GameObject)Instantiate (single_star_prefab);
 				finale_stars [fx].GetComponent<SpriteRenderer> ().sprite = star_sprites [Random.Range (0, star_sprites.Length - 1)];
 				if (fx < centers.Length) finale_stars [fx].transform.position = centers [fx];
+				//TEST
+				if (centers.Length == 0) finale_stars [fx].transform.position = new Vector2 ( Random.Range(0,128), Random.Range(0,72) ); 
+
+				finale_stars [fx].SetActive (false);
+				finale_stars [fx].GetComponent<SpriteRenderer>().enabled = false;
 			}
 			for (int fss = 0; fss < frames_since_seen.Length; fss++) {
 				frames_since_seen [fss] = absence_tolerance + 5;
 			}
+			StartCoroutine (BlinkFinaleStars ());
 			break;
 		}
 			
@@ -1140,6 +1146,7 @@ public class ShowControl : MonoBehaviour {
 		//fade globe quad
 		yield return new WaitForSeconds(wait_seconds);
 		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (.3f);
+		foreach (GameObject g in finale_stars) g.SetActive (true);
 		finale_stars_active = true;
 		yield return new WaitForSeconds (611.183f - music.time);
 		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (0, .005f);
@@ -1156,39 +1163,67 @@ public class ShowControl : MonoBehaviour {
 		finale_stars [Random.Range (0, finale_stars.Length - 1)].
 			GetComponent<blinkBriefly>().blink();
 
-		//yield return new WaitForSeconds ();
+		float[] blinks = 
+		   {624.074f, 624.324f, 624.414f, 624.614f, 625.004f, 625.154f, 625.264f, 625.444f,
+			627.509f, 627.709f, 627.809f, 627.949f, 627.999f, 628.199f, 628.589f, 628.689f, 628.827f,
+			631.084f, 631.184f, 631.384f, 631.484f, 631.784f, 632.154f, 632.204f, 632.224f, 632.414f,
+			634.609f, 634.709f, 634.909f, 635.109f, 635.269f, 635.709f, 635.809f, 635.909f,
+			640f, 640.2f, 640.3f, 640.5f, 640.7f, 641.1f, 641.4f};
+
+		foreach (float f in blinks) {
+			yield return new WaitForSeconds (f - music.time);
+			finale_stars [Random.Range (0, finale_stars.Length - 1)].
+			GetComponent<blinkBriefly>().blink();
+		}
 		/*
-		 * 10m 24.044s = 624.044f
-		 * 10m 24.074s
-		 * 10m 24.324s
-		 * 10m 24.414s
-		 * 10m 24.614s
-		 * 10m 25.004s
-		 * 10m 25.154s
-		 * 10m 25.264s
-		 * 10m 25.444s
+		 ** 10m 24.044s = 624.044f
+		 ** 10m 24.074s
+		 ** 10m 24.324s
+		 ** 10m 24.414s
+		 ** 10m 24.614s
+		 ** 10m 25.004s
+		 ** 10m 25.154s
+		 ** 10m 25.264s
+		 ** 10m 25.444s
 		 * 
-		 * 10m 27.509s
-		 * 10m 27.709s
-		 * 10m 27.809s
-		 * 10m 27.949s
-		 * 10m 27.999s
-		 * 10m 28.199s
-		 * 10m 28.589s
-		 * 10m 28.689s
-		 * 10m 28.827s
+		 ** 10m 27.509s
+		 ** 10m 27.709s
+		 ** 10m 27.809s
+		 ** 10m 27.949s
+		 ** 10m 27.999s
+		 ** 10m 28.199s
+		 ** 10m 28.589s
+		 ** 10m 28.689s
+		 ** 10m 28.827s
 		 * 
-		 * 10m 31.084s
-		 * 10m 31.184s
-		 * 10m 31.384s
-		 * 10m 31.484s
-		 * 10m 31.784s
-		 * 10m 32.154s
-		 * 10m 32.204s
-		 * 10m 32.224s
-		 * 10m 32.414s
+		 ** 10m 31.084s
+		 ** 10m 31.184s
+		 ** 10m 31.384s
+		 ** 10m 31.484s
+		 ** 10m 31.784s
+		 ** 10m 32.154s
+		 ** 10m 32.204s
+		 ** 10m 32.224s
+		 ** 10m 32.414s
 		 * 
+		 ** 10m 34.609s
+		 ** 10m 34.709s
+		 ** 10m 34.909s
+		 ** 10m 35.109s
+		 ** 10m 35.269s
+		 ** 10m 35.709s 
+		 ** 10m 35.809s
+		 ** 10m 35.909s
 		 * 
+		 * 640f, 640.2f, 640.3f, 640.5f, 640.7f, 641.1f, 641.4f
+		 * 
+		 * 10m 40.000s
+		 * 10m 40.200s
+		 * 10m 40.300s
+		 * 10m 40.500s
+		 * 10m 40.700s
+		 * 10m 41.100s
+		 * 10m 41.400s
 		 * 
 		*/
 
