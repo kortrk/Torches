@@ -110,6 +110,8 @@ public class ShowControl : MonoBehaviour {
 	public Camera network_camera;
 	public GameObject globe_quad_prefab;
 	GameObject globe_quad;
+	GameObject[] finale_stars;
+	bool finale_stars_active = false;
 
 
 	void Start () {
@@ -147,6 +149,8 @@ public class ShowControl : MonoBehaviour {
 		for (int x = 0; x < MAX_PADDLES + 1; x++) {
 			edge_lists.Add (new List<Edge> ());
 		}
+
+		finale_stars = new GameObject[MAX_PADDLES + 1];
 
 		StartPhase (phase);
 
@@ -441,6 +445,22 @@ public class ShowControl : MonoBehaviour {
 
 			break;
 			#endregion
+
+		case "globe":
+			if (finale_stars_active) {
+				foreach (Blob p in paddles) {
+					finale_stars [p.id].GetComponent<SpriteRenderer> ().enabled = true;
+					finale_stars [p.id].transform.position = p.getCenter () / SCREEN_SCALEDOWN;
+					frames_since_seen [p.id] = 0;
+				}
+				for (int ff = 0; ff < centers.Length; ff++) {
+					if (frames_since_seen [ff] > absence_tolerance) {
+						finale_stars [ff].GetComponent<SpriteRenderer> ().enabled = false;
+					}
+					frames_since_seen [ff]++;
+				}
+			}
+			break;
 		}
 	}
 
@@ -637,8 +657,16 @@ public class ShowControl : MonoBehaviour {
 		case "globe":
 			music.time = 580.833f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
-			globe_quad = (GameObject) Instantiate (globe_quad_prefab, transform.position, Quaternion.identity);
+			globe_quad = (GameObject)Instantiate (globe_quad_prefab, transform.position, Quaternion.identity);
 			StartCoroutine (GlobeDisplay (597.761f - music.time));
+			for (int fx = 0; fx < finale_stars.Length; fx++) {
+				finale_stars [fx] = (GameObject)Instantiate (single_star_prefab);
+				finale_stars [fx].GetComponent<SpriteRenderer> ().sprite = star_sprites [Random.Range (0, star_sprites.Length - 1)];
+				if (fx < centers.Length) finale_stars [fx].transform.position = centers [fx];
+			}
+			for (int fss = 0; fss < frames_since_seen.Length; fss++) {
+				frames_since_seen [fss] = absence_tolerance + 5;
+			}
 			break;
 		}
 			
@@ -1111,7 +1139,59 @@ public class ShowControl : MonoBehaviour {
 	IEnumerator GlobeDisplay(float wait_seconds){
 		//fade globe quad
 		yield return new WaitForSeconds(wait_seconds);
-		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (.2f);
+		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (.3f);
+		finale_stars_active = true;
+		yield return new WaitForSeconds (611.183f - music.time);
+		globe_quad.GetComponent<globeQuadBehavior> ().FadeDown (0, .005f);
+	}
+
+	IEnumerator BlinkFinaleStars(){
+		GameObject chosen_star;
+		yield return new WaitForSeconds (624.044f - music.time);
+		//set up the blinking
+		foreach (GameObject star in finale_stars)
+			star.GetComponent<SpriteRenderer> ().enabled = false;
+		finale_stars_active = false;
+
+		finale_stars [Random.Range (0, finale_stars.Length - 1)].
+			GetComponent<blinkBriefly>().blink();
+
+		//yield return new WaitForSeconds ();
+		/*
+		 * 10m 24.044s = 624.044f
+		 * 10m 24.074s
+		 * 10m 24.324s
+		 * 10m 24.414s
+		 * 10m 24.614s
+		 * 10m 25.004s
+		 * 10m 25.154s
+		 * 10m 25.264s
+		 * 10m 25.444s
+		 * 
+		 * 10m 27.509s
+		 * 10m 27.709s
+		 * 10m 27.809s
+		 * 10m 27.949s
+		 * 10m 27.999s
+		 * 10m 28.199s
+		 * 10m 28.589s
+		 * 10m 28.689s
+		 * 10m 28.827s
+		 * 
+		 * 10m 31.084s
+		 * 10m 31.184s
+		 * 10m 31.384s
+		 * 10m 31.484s
+		 * 10m 31.784s
+		 * 10m 32.154s
+		 * 10m 32.204s
+		 * 10m 32.224s
+		 * 10m 32.414s
+		 * 
+		 * 
+		 * 
+		*/
+
 	}
 
 	/*Schedule:

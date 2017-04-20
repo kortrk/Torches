@@ -6,6 +6,7 @@ public class globeQuadBehavior : MonoBehaviour {
 	bool fade_in = true;
 	bool fade_down = false;
 	float fade_down_goal;
+	float rate = .03f;
 
 	// Use this for initialization
 	void Start () {
@@ -17,13 +18,13 @@ public class globeQuadBehavior : MonoBehaviour {
 	void Update () {
 		if (fade_in) {
 			Color c = GetComponent<MeshRenderer> ().material.GetColor ("_TintColor");
-			GetComponent<MeshRenderer> ().material.SetColor ("_TintColor", new Color(c.r, c.g, c.b, c.a+.03f));
+			GetComponent<MeshRenderer> ().material.SetColor ("_TintColor", new Color(c.r, c.g, c.b, c.a+rate));
 			if (c.a >= 1f) fade_in = false;
 		}
 		if (fade_down) {
 			print ("fading");
 			Color c = GetComponent<MeshRenderer> ().material.GetColor ("_TintColor");
-			GetComponent<MeshRenderer> ().material.SetColor ("_TintColor", new Color(c.r, c.g, c.b, c.a-.03f));
+			GetComponent<MeshRenderer> ().material.SetColor ("_TintColor", new Color(c.r, c.g, c.b, c.a-rate));
 			if (c.a <= fade_down_goal) fade_down = false;
 		}
 	}
@@ -33,5 +34,13 @@ public class globeQuadBehavior : MonoBehaviour {
 		fade_in = false;
 		fade_down = true;
 		fade_down_goal = goal;
+	}
+
+	public void FadeDown(float goal, float rate_){
+		print ("fading down");
+		fade_in = false;
+		fade_down = true;
+		fade_down_goal = goal;
+		rate = rate_;
 	}
 }
