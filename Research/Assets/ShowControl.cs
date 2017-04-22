@@ -15,6 +15,7 @@ public class ShowControl : MonoBehaviour {
 	AudioSource music;
 	//phase dictates what group of behaviors is active.
 	public string phase = "bubbles"; //for versatility, I use strings rather than #s
+	public GameObject message_ui;
 
 	//MULTI-PHASE VARIABLES
 	public GameObject paddle_center_prefab;
@@ -108,7 +109,9 @@ public class ShowControl : MonoBehaviour {
 	//"globes"
 	public GameObject sphere_prefab;
 	public Camera network_camera;
+	public Camera globe_camera;
 	public GameObject globe_quad_prefab;
+	public GameObject blocking_quad_prefab;
 	GameObject globe_quad;
 	GameObject[] finale_stars;
 	bool finale_stars_active = false;
@@ -223,7 +226,7 @@ public class ShowControl : MonoBehaviour {
 		
 		case "bubbles":
 			#region
-			if (Random.value > .9) {
+			if (Random.value > .85f) {
 				GameObject b = (GameObject)Instantiate (bubble_prefab);
 				Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
 				b.GetComponent<bubbleBehavior> ().setStartAndGoal (transform.position,
@@ -261,7 +264,7 @@ public class ShowControl : MonoBehaviour {
 					star_ids_used [p.id] = true;
 					GameObject star = (GameObject)Instantiate (expanding_star_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
-					star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+					star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true, 3f);
 					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
 				}
 			}
@@ -269,7 +272,7 @@ public class ShowControl : MonoBehaviour {
 			if (Input.GetMouseButtonDown(0)) {
 				Instantiate (star_particles_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
 				GameObject star = (GameObject)Instantiate (expanding_star_prefab, Input.mousePosition / SCREEN_SCALEDOWN, Quaternion.identity);
-				star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true);
+				star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true, 3f);
 			}
 			break;
 			#endregion
@@ -505,6 +508,11 @@ public class ShowControl : MonoBehaviour {
 				//in that interval
 				star_assignments[x] = v3;
 			}
+
+			//activate the ui
+			message_ui.SetActive(true);
+			message_ui.GetComponent<MessageBehavior>().display("Raise your paddle. For best results, tilt it slightly backward.", "green up", 5f);
+
 			break;
 			//Notes: For this I'll need to make 1 star background
 			//of dimensions 1280 x 720 (or a ratio thereof)
@@ -613,7 +621,7 @@ public class ShowControl : MonoBehaviour {
 		case "great torch":
 			#region
 			music.time = 472.672f;
-			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .75f, 0f);
+			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .5f, .25f);
 			great_torch = (GameObject) Instantiate (great_torch_prefab);
 			torch_UI.SetActive (true);
 			StartCoroutine(EndTimer(503.498f - music.time, "great torch", "torches"));
@@ -680,6 +688,8 @@ public class ShowControl : MonoBehaviour {
 
 	//cleans up phase objects and starts the next
 	void EndPhase(string old_phase, string next){
+		message_ui.SetActive (false);
+
 		switch (old_phase) {
 
 		case "intro":
@@ -1170,9 +1180,11 @@ public class ShowControl : MonoBehaviour {
 			634.609f, 634.709f, 634.909f, 635.109f, 635.269f, 635.709f, 635.809f, 635.909f,
 			640f, 640.2f, 640.3f, 640.5f, 640.7f, 641.1f, 641.4f};
 
+		int range = centers.Length - 1;
+		if (centers.Length == 0) range = finale_stars.Length - 1;
 		foreach (float f in blinks) {
 			yield return new WaitForSeconds (f - music.time);
-			finale_stars [Random.Range (0, finale_stars.Length - 1)].
+			finale_stars [Random.Range (0, range)].
 			GetComponent<blinkBriefly>().blink();
 		}
 		/*

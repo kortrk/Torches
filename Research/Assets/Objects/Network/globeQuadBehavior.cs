@@ -22,7 +22,7 @@ public class globeQuadBehavior : MonoBehaviour {
 			if (c.a >= 1f) fade_in = false;
 		}
 		if (fade_down) {
-			print ("fading");
+			//print ("fading");
 			Color c = GetComponent<MeshRenderer> ().material.GetColor ("_TintColor");
 			GetComponent<MeshRenderer> ().material.SetColor ("_TintColor", new Color(c.r, c.g, c.b, c.a-rate));
 			if (c.a <= fade_down_goal) fade_down = false;

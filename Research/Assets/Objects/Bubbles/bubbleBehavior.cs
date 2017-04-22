@@ -18,7 +18,7 @@ public class bubbleBehavior : MonoBehaviour {
 	void Start () {
 		travel_time = Random.Range (180f, 230f);
 		start_time = Time.time;
-		transform.localScale = transform.localScale * Random.Range (.8f, 1.2f);
+		transform.localScale = transform.localScale * Random.Range (.7f, 1.3f);
 		cf = GameObject.FindObjectOfType<CameraFeed> ();
 	}
 	

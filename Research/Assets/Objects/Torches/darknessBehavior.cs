@@ -18,14 +18,6 @@ public class darknessBehavior : MonoBehaviour {
 		
 	}
 
-	public void see_through(bool value){
-		if (value) {
-			sr.enabled = false;
-		} else {
-			sr.enabled = true;
-		}
-	}
-
 	public void checkAround(GameObject[] torches){
 		sr.enabled = true;
 		sr.color = new Color (sr.color.r, sr.color.g, sr.color.b, 1f);

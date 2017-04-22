@@ -9,6 +9,7 @@ public class expandingShape : MonoBehaviour {
 	bool get_moving = false;
 	Vector3 full_size;
 	bool turn = false;
+	float translate_speed = 6f;
 
 	// Use this for initialization
 	void Start () {
@@ -18,7 +19,7 @@ public class expandingShape : MonoBehaviour {
 	// Update is called once per frame
 	void Update () {
 		if (!get_moving) return;
-		transform.position = Vector3.MoveTowards (transform.position, quad_center, 6f);
+		transform.position = Vector3.MoveTowards (transform.position, quad_center, translate_speed);
 		//print (Vector2.Distance (transform.position, quad_center)+"/"+total_move_distance);
 		float percentage = 1f - (Vector2.Distance (transform.position, quad_center) / total_move_distance);
 		transform.localScale = full_size * percentage;
@@ -35,5 +36,10 @@ public class expandingShape : MonoBehaviour {
 		get_moving = true;
 		turn = do_turn;
 		if (turn) transform.rotation = Quaternion.Euler(0f, 0f, total_rotation_distance);
+	}
+
+	public void StartMoveAndTurn(Vector2 center, bool do_turn, float speed){
+		translate_speed = speed;
+		StartMoveAndTurn (center, do_turn);
 	}
 }

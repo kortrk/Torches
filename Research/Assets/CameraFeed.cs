@@ -374,25 +374,28 @@ public class CameraFeed : MonoBehaviour {
 		/*
 		4/13 Darken shapes background. I can't see my shape fly
 		into place over the camera feed.
-		--done RPI logo should stick around for a while..--
+		DONE RPI logo should stick around for a while..
 		Make heart effect repeatable? Ask the playtesters about this.
-		DONE?? Kill those lingering stars!!
+		DONE Kill those lingering stars!!
 		Take glow's perlin noise and mimic it in the illumination
+		DONE Make the glow around the fire dark for better visibility on screen
 		*/
 
 		/*
 			4/17 Group testing notes
-			More bubbles bigger size range  more speed variation
+			DONE More bubbles bigger size range  more speed variation
 			Allow pink hearts and white stars multiple times
 			Signal to put down paddles before hearts
-			Slow down star flight to show spinning better?
-			Dark glow around great torch (better definition on flame) 
+			DONE Slow down star flight to show spinning better?
+			DONE Dark glow around great torch (better definition on flame) 
 			 and more transparent background
-			Torch ratio for color choice just plain didnt work - related to 
+			DONE Torch ratio for color choice just plain didnt work - related to 
 			 an error on line 365 of ShowControl?
 			Inform audience to tilt paddles back a little
 			Illumination around paddles doesn't work, but around mouse
 			 it does...
+			DONE Blinking stars at end end up on side - it should only use the stars
+			 linked to paddles.
 		*/
 
 
