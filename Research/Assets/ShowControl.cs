@@ -13,6 +13,7 @@ public class ShowControl : MonoBehaviour {
 	CameraFeed cf;
 	List<Blob> paddles;
 	AudioSource music;
+	NarrationBehavior narration;
 	//phase dictates what group of behaviors is active.
 	public string phase = "bubbles"; //for versatility, I use strings rather than #s
 	public GameObject message_ui;
@@ -126,6 +127,7 @@ public class ShowControl : MonoBehaviour {
 
 		paddles = cf.green_blobs;
 		music = GameObject.Find ("Music").GetComponent<AudioSource>();
+		narration = GameObject.Find ("Narration").GetComponent<NarrationBehavior>();
 		background = GameObject.Find("star background");
 		centers = new Vector2[0];
 
@@ -480,6 +482,7 @@ public class ShowControl : MonoBehaviour {
 			music.time = 0;
 			StartCoroutine(EndTimer (19.309f - music.time, "intro", "stars"));
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, 0f, 0f);
+			narration.PlayClip("intro", 5f);
 			break;
 			#endregion
 
@@ -530,6 +533,7 @@ public class ShowControl : MonoBehaviour {
 			}
 
 			//set when the next phase starts
+			narration.PlayClip("welcome", (56.698f + 2f) - music.time);
 			StartCoroutine(EndTimer(71.971f - music.time, "stars twinkling", "bubbles"));
 			break;
 			#endregion
@@ -554,6 +558,7 @@ public class ShowControl : MonoBehaviour {
 			music.time = 129.756f;
 			background.GetComponent<expandBackground>().startSwitchColor(Color.white, .5f, 2f);
 			background.GetComponent<expandBackground>().grow = false;
+			narration.PlayClip("heart", 1f);
 			//we allow the heart to start being revealed when the violin comes in
 			//in the soundtrack, at 2 min 23 sec 713 millis
 			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
@@ -589,6 +594,7 @@ public class ShowControl : MonoBehaviour {
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
 			StartCoroutine (DelayBackgroundChange (259.913f - music.time, Color.red, 1f, 3f));
 			StartCoroutine(waitThenMessage(208f - music.time, "Flip your paddle from red to green to throw some paint.", "flip", 8f));
+			narration.PlayClip("rpi", .5f);
 			//set up when this ends
 			StartCoroutine(EndTimer(273.269f - music.time, "RPI", "second intro"));
 			break;
@@ -597,7 +603,10 @@ public class ShowControl : MonoBehaviour {
 		case "second intro":
 			music.time = 273.269f;
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .25f, 16f);
-			StartCoroutine(EndTimer(286f - music.time, "second intro", "fireworks"));
+			narration.PlayClip ("torches", 5f);
+			float old_music_volume = music.volume;
+			music.volume = 1f;
+			StartCoroutine(FadeMusicIntoFireworks(320f - music.time, 4f, music.time + (320f - music.time) + 4f, old_music_volume));
 			break;
 
 		case "fireworks":
@@ -682,7 +691,8 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (TwinkleNetwork (562.449f - music.time, 3.590f));
 			StartCoroutine (DelayBackgroundChange (574.665f - music.time, Color.black, 1f, 2f));
 			StartCoroutine (EndTimer (580.833f - music.time, "network", "globe"));
-			StartCoroutine(waitThenMessage(1f, "Paddles up!", "green up", 4f));
+			StartCoroutine (waitThenMessage (1f, "Paddles up!", "green up", 4f));
+			narration.PlayClip ("tapestry", 1f);
 			network_camera.gameObject.SetActive (true);
 			globe_camera.gameObject.SetActive (true);
 			Instantiate (blocking_quad_prefab);
@@ -696,17 +706,20 @@ public class ShowControl : MonoBehaviour {
 			for (int fx = 0; fx < finale_stars.Length; fx++) {
 				finale_stars [fx] = (GameObject)Instantiate (single_star_prefab);
 				finale_stars [fx].GetComponent<SpriteRenderer> ().sprite = star_sprites [Random.Range (0, star_sprites.Length - 1)];
-				if (fx < centers.Length) finale_stars [fx].transform.position = centers [fx];
+				if (fx < centers.Length)
+					finale_stars [fx].transform.position = centers [fx];
 				//TEST
-				if (centers.Length == 0) finale_stars [fx].transform.position = new Vector2 ( Random.Range(0,128), Random.Range(0,72) ); 
+				if (centers.Length == 0)
+					finale_stars [fx].transform.position = new Vector2 (Random.Range (0, 128), Random.Range (0, 72)); 
 
 				finale_stars [fx].SetActive (false);
-				finale_stars [fx].GetComponent<SpriteRenderer>().enabled = false;
+				finale_stars [fx].GetComponent<SpriteRenderer> ().enabled = false;
 			}
 			for (int fss = 0; fss < frames_since_seen.Length; fss++) {
 				frames_since_seen [fss] = absence_tolerance + 5;
 			}
 			StartCoroutine (BlinkFinaleStars ());
+			narration.PlayClip ("thank you", 623.204f - music.time);
 			break;
 		}
 			
@@ -875,9 +888,36 @@ public class ShowControl : MonoBehaviour {
 		background.GetComponent<expandBackground> ().startSwitchColor (new_color, transparency/*1f*/, change_time/*3f*/);
 	}
 
+	IEnumerator FadeMusicIntoFireworks(float wait_seconds, float fade_duration, float fade_time_goal, float old_music_volume){
+		if (wait_seconds > 0) {
+			yield return new WaitForSeconds (wait_seconds);
+			print ("fading!");
+		} else {
+			yield return new WaitForSeconds (.05f);
+		}
+		//what percentage of the time have we covered?
+		print("fade time goal("+fade_time_goal+") - music.time("+music.time+") / fade_duration("+fade_duration);
+		music.volume = (fade_time_goal - music.time) / (float)fade_duration; 
+		print (music.volume);
+		if (music.volume <= 0) {
+			music.volume = old_music_volume;
+			EndPhase ("second intro", "fireworks");
+		} 
+		else {
+			//loop and wait around for more music fading
+			StartCoroutine (FadeMusicIntoFireworks(0f, fade_duration, fade_time_goal, old_music_volume));
+		}
+	}
+
+
+
 	IEnumerator fireworksDoStore(float wait_seconds, bool store_val){
 		yield return new WaitForSeconds (wait_seconds);
 		store = store_val;
+		if (store_val) {
+			message_ui.SetActive (true);
+			message_ui.GetComponent<MessageBehavior> ().display ("Paddles up!", "green up", 3f);
+		}
 	}
 
 	IEnumerator launchStore(float wait_seconds, GameObject chosen_burst){
@@ -1061,6 +1101,7 @@ public class ShowControl : MonoBehaviour {
 
 	public void PhaseJump(){
 		StopAllCoroutines ();
+		narration.gameObject.GetComponent<AudioSource> ().clip = null;
 		EndPhase (phase, phase_input.text);
 	}
 
