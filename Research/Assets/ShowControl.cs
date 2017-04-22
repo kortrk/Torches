@@ -541,6 +541,11 @@ public class ShowControl : MonoBehaviour {
 			background.GetComponent<expandBackground>().startSwitchColor(Color.black, .3f, .5f);
 			StartCoroutine(EndTimer(129.756f - music.time, "bubbles", "heart")); 
 			//heart starts at 2 min 9 sec 756 millis
+
+			//activate the ui
+			message_ui.SetActive(true);
+			message_ui.GetComponent<MessageBehavior>().display("Raise your paddle.", "green up", 4f);
+
 			break;
 			#endregion
 
@@ -554,6 +559,13 @@ public class ShowControl : MonoBehaviour {
 			StartCoroutine (waitAndActivateHeart (143.713f - music.time));
 			//set up when this ends
 			StartCoroutine (EndTimer(172.546f - music.time, "heart", "expanding star"));
+
+			//activate the ui
+			message_ui.SetActive(true);
+			message_ui.GetComponent<MessageBehavior>().display("Paddles down.", "paddles down", 3f);
+			StartCoroutine(waitThenMessage(151f - music.time, "Raise your paddle.", "green up", 4f));
+			StartCoroutine(waitThenMessage(165f - music.time, "Paddles down.", "paddles down", 3f));
+
 			break;
 			#endregion
 
@@ -562,6 +574,9 @@ public class ShowControl : MonoBehaviour {
 			music.time = 172.546f;
 			background.GetComponent<expandBackground> ().
 			  startSwitchColor(new Color(0f,0f,75f), .5f, 1.5f);
+
+			StartCoroutine(waitThenMessage(178f - music.time, "Paddles up.", "paddles down", 3f));
+
 			//set up when this ends
 			StartCoroutine(EndTimer(204.651f - music.time, "expanding star", "RPI"));
 			break;
@@ -573,6 +588,7 @@ public class ShowControl : MonoBehaviour {
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, 1f, 1.5f);
 			Instantiate (rpi_logo_prefab, transform.position, Quaternion.identity);
 			StartCoroutine (DelayBackgroundChange (259.913f - music.time, Color.red, 1f, 3f));
+			StartCoroutine(waitThenMessage(208f - music.time, "Flip your paddle from red to green to throw some paint.", "flip", 8f));
 			//set up when this ends
 			StartCoroutine(EndTimer(273.269f - music.time, "RPI", "second intro"));
 			break;
@@ -594,9 +610,14 @@ public class ShowControl : MonoBehaviour {
 				seen_in_last_frame.Add (p.id);
 			}
 
+			StartCoroutine(waitThenMessage(1f, "PADDLES UP!", "green up", 3f));
+
 			//initial burst
 			StartCoroutine (fireworksDoStore (406.2f - music.time, false));
 			StartCoroutine (launchStore (406.2f - music.time, basic_burst_prefab));
+
+			StartCoroutine(waitThenMessage(410f - music.time, "Flip your paddle from red to green.", "flip", 4f));
+
 			//timed bursts later on in the phase
 			StartCoroutine (fireworksDoStore (431.507f - music.time, true));
 			StartCoroutine (setStorePercentage (435.440f - music.time, .25f));
@@ -625,6 +646,7 @@ public class ShowControl : MonoBehaviour {
 			great_torch = (GameObject) Instantiate (great_torch_prefab);
 			torch_UI.SetActive (true);
 			StartCoroutine(EndTimer(503.498f - music.time, "great torch", "torches"));
+			StartCoroutine(waitThenMessage(1f, "Put up red or green.", "green or red", 8f));
 			break;
 			#endregion
 
@@ -658,8 +680,12 @@ public class ShowControl : MonoBehaviour {
 			background.GetComponent<expandBackground> ().startSwitchColor (Color.black, .65f, 0f);
 			StartCoroutine (StartNodeConnection (555.419f - music.time));
 			StartCoroutine (TwinkleNetwork (562.449f - music.time, 3.590f));
-			StartCoroutine(DelayBackgroundChange(574.665f - music.time, Color.black, 1f, 2f));
+			StartCoroutine (DelayBackgroundChange (574.665f - music.time, Color.black, 1f, 2f));
 			StartCoroutine (EndTimer (580.833f - music.time, "network", "globe"));
+			StartCoroutine(waitThenMessage(1f, "Paddles up!", "green up", 4f));
+			network_camera.gameObject.SetActive (true);
+			globe_camera.gameObject.SetActive (true);
+			Instantiate (blocking_quad_prefab);
 			break;
 
 		case "globe":
@@ -782,6 +808,16 @@ public class ShowControl : MonoBehaviour {
 			//wait, then destroy the other objects
 			StartCoroutine (waitThenDestroyNetwork ());
 			StartPhase (next);
+			break;
+
+		case "globe":
+			foreach (GameObject fi in finale_stars) {
+				Destroy (fi);
+			}
+			network_camera.gameObject.SetActive (false);
+			globe_camera.gameObject.SetActive (false);
+			Destroy (GameObject.FindObjectOfType<globeQuadBehavior> ().gameObject);
+			Destroy (GameObject.Find ("Blocking Quad(Clone)"));
 			break;
 		}
 			
@@ -1187,58 +1223,14 @@ public class ShowControl : MonoBehaviour {
 			finale_stars [Random.Range (0, range)].
 			GetComponent<blinkBriefly>().blink();
 		}
-		/*
-		 ** 10m 24.044s = 624.044f
-		 ** 10m 24.074s
-		 ** 10m 24.324s
-		 ** 10m 24.414s
-		 ** 10m 24.614s
-		 ** 10m 25.004s
-		 ** 10m 25.154s
-		 ** 10m 25.264s
-		 ** 10m 25.444s
-		 * 
-		 ** 10m 27.509s
-		 ** 10m 27.709s
-		 ** 10m 27.809s
-		 ** 10m 27.949s
-		 ** 10m 27.999s
-		 ** 10m 28.199s
-		 ** 10m 28.589s
-		 ** 10m 28.689s
-		 ** 10m 28.827s
-		 * 
-		 ** 10m 31.084s
-		 ** 10m 31.184s
-		 ** 10m 31.384s
-		 ** 10m 31.484s
-		 ** 10m 31.784s
-		 ** 10m 32.154s
-		 ** 10m 32.204s
-		 ** 10m 32.224s
-		 ** 10m 32.414s
-		 * 
-		 ** 10m 34.609s
-		 ** 10m 34.709s
-		 ** 10m 34.909s
-		 ** 10m 35.109s
-		 ** 10m 35.269s
-		 ** 10m 35.709s 
-		 ** 10m 35.809s
-		 ** 10m 35.909s
-		 * 
-		 * 640f, 640.2f, 640.3f, 640.5f, 640.7f, 641.1f, 641.4f
-		 * 
-		 * 10m 40.000s
-		 * 10m 40.200s
-		 * 10m 40.300s
-		 * 10m 40.500s
-		 * 10m 40.700s
-		 * 10m 41.100s
-		 * 10m 41.400s
-		 * 
-		*/
+	}
 
+	IEnumerator waitThenMessage(float wait_seconds, string message, string sequence, float duration){
+		print ("getting ready to activate ui");
+		yield return new WaitForSeconds (wait_seconds);
+		print ("activating ui");
+		message_ui.SetActive (true);
+		message_ui.GetComponent<MessageBehavior> ().display (message, sequence, duration);
 	}
 
 	/*Schedule:

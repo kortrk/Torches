@@ -16,6 +16,7 @@ public class MessageBehavior : MonoBehaviour {
 	}
 
 	public void display(string text_, string image_sequence, float duration){
+		print ("DISPLAY");
 		image.useSequence (image_sequence);
 		text.text = text_; //I am ashamed of this line
 							//but not enough to change it

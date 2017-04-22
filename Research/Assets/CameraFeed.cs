@@ -396,6 +396,7 @@ public class CameraFeed : MonoBehaviour {
 			 it does...
 			DONE Blinking stars at end end up on side - it should only use the stars
 			 linked to paddles.
+			Where is the first fireworks burst??!?! It's the best part of the show!
 		*/
 
 
