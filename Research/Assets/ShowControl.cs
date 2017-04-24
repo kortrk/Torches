@@ -305,7 +305,7 @@ public class ShowControl : MonoBehaviour {
 			foreach (Blob p in paddles) {
 				if (!seen_in_last_frame.Contains (p.id)) {
 					if (store) {
-						if (!stored_bursts.ContainsKey(p.id)) stored_bursts.Add (p.id, p.getCenter ());
+						if (!stored_bursts.ContainsKey(p.id)) stored_bursts.Add (p.id, p.getCenter ()/SCREEN_SCALEDOWN);
 					} else {
 						GameObject f = (GameObject)Instantiate (firework_ball_prefab);
 						f.GetComponent<fireworkBallBehavior> ().Launch (firework_launch_loc, p.getCenter () / SCREEN_SCALEDOWN, firework_colors [p.id], basic_burst_prefab);
@@ -707,7 +707,7 @@ public class ShowControl : MonoBehaviour {
 				finale_stars [fx] = (GameObject)Instantiate (single_star_prefab);
 				finale_stars [fx].GetComponent<SpriteRenderer> ().sprite = star_sprites [Random.Range (0, star_sprites.Length - 1)];
 				if (fx < centers.Length)
-					finale_stars [fx].transform.position = centers [fx];
+					finale_stars [fx].transform.position = centers [fx]/SCREEN_SCALEDOWN;
 				//TEST
 				if (centers.Length == 0)
 					finale_stars [fx].transform.position = new Vector2 (Random.Range (0, 128), Random.Range (0, 72)); 

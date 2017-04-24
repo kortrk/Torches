@@ -59,10 +59,10 @@ public class CameraFeed : MonoBehaviour {
 	public int WIDTH = 1280;
 	public int HEIGHT = 720;
 	public float SCREEN_SCALEDOWN = 10f;//Unity struggles with large coordinates
-	int TOP_PADDLE_Y = 610; //where on screen is the top paddle
-	int BOTTOM_PADDLE_Y = 190; //        "       bottom paddle
-	int TOP_PADDLE_H = 20;    //we use height to predict diminishing..
-	int BOTTOM_PADDLE_H = 90; //paddle size with row in lecture hall
+	int TOP_PADDLE_Y = 620; //where on screen is the top paddle
+	int BOTTOM_PADDLE_Y = 340; //        "       bottom paddle
+	int TOP_PADDLE_H = 30;    //we use height to predict diminishing..
+	int BOTTOM_PADDLE_H = 100; //paddle size with row in lecture hall
 
 
 	//public variables
@@ -397,6 +397,11 @@ public class CameraFeed : MonoBehaviour {
 			DONE Blinking stars at end end up on side - it should only use the stars
 			 linked to paddles.
 			Where is the first fireworks burst??!?! It's the best part of the show!
+		*/
+
+		/* 423 Testing 
+					Bubbles- MORE, instruct audience to flip paddle to pop
+					Smaller torches
 		*/
 
 

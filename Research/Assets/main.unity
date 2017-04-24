@@ -1233,7 +1233,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 312ed96dc6bd9ad41a0cf8fb9872e2d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  phase: globe
+  phase: stars
   message_ui: {fileID: 5697946}
   paddle_center_prefab: {fileID: 1855934086462674, guid: 189efcb3eaafdd046995d13b1273850c,
     type: 2}
