@@ -228,7 +228,7 @@ public class ShowControl : MonoBehaviour {
 		
 		case "bubbles":
 			#region
-			if (Random.value > .85f) {
+			if (Random.value > .75f) {
 				GameObject b = (GameObject)Instantiate (bubble_prefab);
 				Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
 				b.GetComponent<bubbleBehavior> ().setStartAndGoal (transform.position,
@@ -240,14 +240,19 @@ public class ShowControl : MonoBehaviour {
 		case "heart":
 			#region
 			foreach (Blob p in paddles) {
-				if (!heart_ids_used [p.id] && shape_color_bursts_active) {
+				if (frames_since_seen[p.id] > 10 && shape_color_bursts_active) {
+					print(p.id);
 					Instantiate (heart_particles_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
-					heart_ids_used [p.id] = true;
+					//heart_ids_used [p.id] = true;
 					GameObject heart = (GameObject)Instantiate (heart_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
 					heart.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, false);
 					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
 				}
+				frames_since_seen[p.id] = -1;
+			}
+			for (int frm = 0; frm < frames_since_seen.Length; frm++){
+				frames_since_seen[frm]++;
 			}
 			//TEST
 			if (Input.GetMouseButtonDown(0) && shape_color_bursts_active) {
@@ -261,14 +266,18 @@ public class ShowControl : MonoBehaviour {
 		case "expanding star":
 			#region
 			foreach (Blob p in paddles) {
-				if (!star_ids_used [p.id]) {
+				if (frames_since_seen[p.id] > 10) {
 					Instantiate (star_particles_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
-					star_ids_used [p.id] = true;
+					//star_ids_used [p.id] = true;
 					GameObject star = (GameObject)Instantiate (expanding_star_prefab, p.getCenter () / SCREEN_SCALEDOWN, Quaternion.identity);
 					Bounds quad_bounds = GetComponent<MeshRenderer> ().bounds;
 					star.GetComponent<expandingShape> ().StartMoveAndTurn (transform.position, true, 3f);
 					//circle.GetComponent<expandShapeCircle> ().setGoalRadius (quad_bounds.size.x, quad_bounds.size.y);
 				}
+				frames_since_seen[p.id] = -1;
+			}
+			for (int frme = 0; frme < frames_since_seen.Length; frme++){
+				frames_since_seen[frme]++;
 			}
 			//TEST
 			if (Input.GetMouseButtonDown(0)) {
@@ -548,7 +557,7 @@ public class ShowControl : MonoBehaviour {
 
 			//activate the ui
 			message_ui.SetActive(true);
-			message_ui.GetComponent<MessageBehavior>().display("Raise your paddle.", "green up", 4f);
+			message_ui.GetComponent<MessageBehavior>().display("To pop a bubble, flip your paddle to green and touch a bubble. Then, flip back to red to make room for more.", "flip", 7f);
 
 			break;
 			#endregion
@@ -1113,7 +1122,7 @@ public class ShowControl : MonoBehaviour {
 			for (int center_index = 0; center_index < centers.Length; center_index++) {
 				if (dots [center_index] == null) {
 					dots [center_index] = (GameObject)Instantiate (dot_prefab, centers [center_index] / SCREEN_SCALEDOWN, Quaternion.identity);
-					dots [center_index].GetComponent<dotBehavior> ().startUp (.5f, Color.cyan);//firework_colors [center_index]);
+					dots [center_index].GetComponent<dotBehavior> ().startUp (.5f, firework_colors [center_index]);
 					GameObject particles = (GameObject)Instantiate (dot_particle_prefab, centers [center_index] / SCREEN_SCALEDOWN, Quaternion.identity);
 					ParticleSystem.MainModule settings = particles.GetComponent<ParticleSystem> ().main;
 					settings.startColor = new ParticleSystem.MinMaxGradient (firework_colors [center_index]);

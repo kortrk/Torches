@@ -385,23 +385,26 @@ public class CameraFeed : MonoBehaviour {
 			4/17 Group testing notes
 			DONE More bubbles bigger size range  more speed variation
 			Allow pink hearts and white stars multiple times
-			Signal to put down paddles before hearts
+			DONE Signal to put down paddles before hearts
 			DONE Slow down star flight to show spinning better?
 			DONE Dark glow around great torch (better definition on flame) 
 			 and more transparent background
 			DONE Torch ratio for color choice just plain didnt work - related to 
 			 an error on line 365 of ShowControl?
-			Inform audience to tilt paddles back a little
-			Illumination around paddles doesn't work, but around mouse
+			DONE Inform audience to tilt paddles back a little
+			TOSSED Illumination around paddles doesn't work, but around mouse
 			 it does...
 			DONE Blinking stars at end end up on side - it should only use the stars
 			 linked to paddles.
-			Where is the first fireworks burst??!?! It's the best part of the show!
+			DONE Where is the first fireworks burst??!?! It's the best part of the show!
 		*/
 
 		/* 423 Testing 
-					Bubbles- MORE, instruct audience to flip paddle to pop
-					Smaller torches
+			DONE Bubbles- MORE, instruct audience to flip paddle to pop
+			DONE Smaller torches
+			Test exe
+			DONE Make network dots the correct color when autofilled
+			DONE Make hearts and expanding star repeatable
 		*/
 
 
